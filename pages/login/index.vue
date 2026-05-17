@@ -68,8 +68,7 @@
 					<view class="btn-wrap">
 						<view 
 							class="login-btn tap" 
-							:class="{ disabled: !canSubmit }" 
-							:class="{ loading: loading }" 
+							:class="{ disabled: !canSubmit, loading: loading }" 
 							@click="handleLogin"
 						>
 							{{ loading ? '登录中...' : '登录' }}

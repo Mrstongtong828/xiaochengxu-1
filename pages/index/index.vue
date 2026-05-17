@@ -42,21 +42,26 @@
 						</view>
 						<view class="repair-field">
 							<text>购买日期</text>
-							<text class="date-value" :class="{ placeholder: !product.buyDate }">{{ product.buyDate || '请选择' }}</text>
 							<picker mode="date" :value="product.buyDate" @change="(e) => onDateChange(index, e)">
-								<view class="field-mini field-calendar"></view>
+								<view class="field-action tap">
+									<text class="field-action-value" :class="{ placeholder: !product.buyDate }">{{ product.buyDate || '请选择日期' }}</text>
+									<view class="field-mini field-calendar"></view>
+								</view>
 							</picker>
 						</view>
-						<view class="repair-field" @click="openVoucherPicker(index)">
+						<view class="repair-field voucher-field tap" @click="openVoucherPicker(index)">
 							<text>购买凭证</text>
 							<view class="voucher-status">
-								<text v-if="product.voucherList && product.voucherList.length" class="voucher-count">{{ product.voucherList.length }} 张凭证</text>
-								<text v-else class="placeholder">点击上传</text>
+								<text v-if="product.voucherList && product.voucherList.length" class="voucher-count">{{ product.voucherList.length }} 张已上传</text>
+								<view v-else class="upload-box voucher-upload">
+									<text>+</text>
+									<text>上传凭证</text>
+								</view>
 							</view>
 							<view class="field-mini field-clip"></view>
 						</view>
 						<view v-if="product.voucherList && product.voucherList.length" class="voucher-preview">
-							<view v-for="(voucher, vIndex) in product.voucherList" :key="voucher.id" class="voucher-thumb">
+							<view v-for="(voucher, vIndex) in product.voucherList" :key="voucher.id" class="voucher-thumb tap" @click="previewVoucher(index, vIndex)">
 								<image class="voucher-image" :src="voucher.url || voucher.path" mode="aspectFill"></image>
 								<view class="voucher-remove" @click.stop="removeVoucher(index, vIndex)">×</view>
 							</view>
@@ -2167,6 +2172,20 @@ const onDateChange = (productIndex, e) => {
 	product.buyDate = e.detail.value
 }
 
+const previewVoucher = (productIndex, voucherIndex) => {
+	const product = repairProducts.value[productIndex]
+	const voucher = product?.voucherList?.[voucherIndex]
+	if (!voucher) return
+
+	const urls = (product.voucherList || []).map((item) => item.url || item.path).filter(Boolean)
+	if (!urls.length) return
+
+	uni.previewImage({
+		current: voucher.url || voucher.path,
+		urls
+	})
+}
+
 const openVoucherPicker = (productIndex) => {
 	const product = repairProducts.value[productIndex]
 	if (!product) return
@@ -2180,30 +2199,24 @@ const openVoucherPicker = (productIndex) => {
 		return
 	}
 	
-	uni.showActionSheet({
-		itemList: ['拍照上传', '从相册选择'],
-		success: (res) => {
-			const sourceType = res.tapIndex === 0 ? ['camera'] : ['album']
-			uni.chooseImage({
-				count: 3 - product.voucherList.length,
-				sourceType: sourceType,
-				sizeType: ['compressed'],
-				success: (chooseRes) => {
-					const tempFilePaths = chooseRes.tempFilePaths || []
-					tempFilePaths.forEach((path) => {
-						product.voucherList.push({
-							id: `voucher-${Date.now()}-${Math.random()}`,
-							path: path,
-							url: path
-						})
-					})
-					product.voucher = product.voucherList.map(v => v.path).join(',')
-					uni.showToast({ title: '上传成功', icon: 'success' })
-				},
-				fail: (error) => {
-					console.warn('choose image cancelled:', error)
-				}
+	uni.chooseImage({
+		count: 3 - product.voucherList.length,
+		sourceType: ['album', 'camera'],
+		sizeType: ['compressed'],
+		success: (chooseRes) => {
+			const tempFilePaths = chooseRes.tempFilePaths || []
+			tempFilePaths.forEach((path) => {
+				product.voucherList.push({
+					id: `voucher-${Date.now()}-${Math.random()}`,
+					path,
+					url: path
+				})
 			})
+			product.voucher = product.voucherList.map(v => v.path).join(',')
+			uni.showToast({ title: '上传成功', icon: 'success' })
+		},
+		fail: (error) => {
+			console.warn('choose image cancelled:', error)
 		}
 	})
 }
@@ -4990,6 +5003,20 @@ onMounted(() => {
 	color: #0F1F3A;
 }
 
+.field-action {
+	min-width: 0;
+	flex: 1;
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	gap: 12rpx;
+}
+
+.field-action-value {
+	font-size: 27rpx;
+	color: #0F1F3A;
+}
+
 .voucher-preview {
 	padding: 20rpx 28rpx 28rpx;
 	display: flex;
@@ -5038,6 +5065,7 @@ onMounted(() => {
 }
 
 .voucher-status {
+	min-width: 0;
 	flex: 1;
 	display: flex;
 	justify-content: flex-end;
@@ -5053,6 +5081,22 @@ onMounted(() => {
 .voucher-status .placeholder {
 	font-size: 27rpx;
 	color: #94A3B8;
+}
+
+.voucher-upload {
+	width: 186rpx;
+	height: 120rpx;
+	margin-left: auto;
+}
+
+.voucher-upload text:first-child {
+	font-size: 44rpx;
+	line-height: 1;
+}
+
+.voucher-upload text:last-child {
+	font-size: 22rpx;
+	font-weight: 500;
 }
 
 .repair-field .placeholder {
