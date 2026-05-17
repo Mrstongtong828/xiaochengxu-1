@@ -1,0 +1,87 @@
+{
+  "bsonType": "object",
+  "required": ["orderNo", "userId", "receiverName", "receiverPhone", "products"],
+  "permission": {
+    "read": "doc.userId == auth.uid",
+    "create": "auth.uid != null",
+    "update": "doc.userId == auth.uid",
+    "delete": "doc.userId == auth.uid"
+  },
+  "properties": {
+    "_id": {
+      "description": "ID，系统自动生成"
+    },
+    "orderNo": {
+      "bsonType": "string",
+      "description": "订单号"
+    },
+    "userId": {
+      "bsonType": "string",
+      "description": "用户ID"
+    },
+    "receiverName": {
+      "bsonType": "string",
+      "description": "收件人姓名"
+    },
+    "receiverPhone": {
+      "bsonType": "string",
+      "description": "收件人电话"
+    },
+    "receiverAddress": {
+      "bsonType": "string",
+      "description": "收件地址"
+    },
+    "products": {
+      "bsonType": "array",
+      "description": "维修产品列表",
+      "arrayType": "object",
+      "properties": {
+        "name": {
+          "bsonType": "string",
+          "description": "产品名称"
+        },
+        "model": {
+          "bsonType": "string",
+          "description": "型号"
+        },
+        "serial": {
+          "bsonType": "string",
+          "description": "序列号"
+        },
+        "buyDate": {
+          "bsonType": "string",
+          "description": "购买日期"
+        },
+        "voucherImages": {
+          "bsonType": "array",
+          "description": "购买凭证图片"
+        },
+        "faultDesc": {
+          "bsonType": "string",
+          "description": "故障描述"
+        },
+        "images": {
+          "bsonType": "array",
+          "description": "故障图片"
+        },
+        "videos": {
+          "bsonType": "array",
+          "description": "故障视频"
+        }
+      }
+    },
+    "status": {
+      "bsonType": "string",
+      "description": "订单状态",
+      "enum": ["pending", "fixing", "completed", "shipped"]
+    },
+    "createTime": {
+      "bsonType": "timestamp",
+      "description": "创建时间"
+    },
+    "updateTime": {
+      "bsonType": "timestamp",
+      "description": "更新时间"
+    }
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "bsonType": "object",
+  "required": ["userId", "token"],
+  "permission": {
+    "read": false,
+    "create": true,
+    "update": false,
+    "delete": false
+  },
+  "properties": {
+    "_id": {
+      "description": "ID，系统自动生成"
+    },
+    "userId": {
+      "bsonType": "string",
+      "description": "用户ID"
+    },
+    "token": {
+      "bsonType": "string",
+      "description": "Token"
+    },
+    "createTime": {
+      "bsonType": "timestamp",
+      "description": "创建时间"
+    },
+    "expireTime": {
+      "bsonType": "timestamp",
+      "description": "过期时间"
+    }
+  }
+}
