@@ -627,11 +627,11 @@
 			</view>
 		</view>
 
-		<view v-else class="page-scroll">
+		<view v-else-if="pageBootReady" class="page-scroll">
 			<view v-if="activeTab === 'home'" class="home-body">
 				<view class="brand-bar">
 					<view class="brand-left">
-						<image class="brand-logo" src="/static/cicada/logo-cicada-mark.jpg" mode="aspectFit"></image>
+						<image class="brand-logo" :src="cicadaAssets.logoMark" mode="aspectFit"></image>
 						<text class="brand-name">思科达</text>
 					</view>
 					<view class="wechat-button tap" @click="showQr = true">
@@ -668,7 +668,7 @@
 				<view class="hero-wrap">
 					<view class="hero-card">
 						<view class="hero-media">
-							<image class="hero-image" src="/static/cicada/photo-factory.jpg" mode="aspectFill"></image>
+							<image class="hero-image" :src="cicadaAssets.photoFactory" mode="aspectFill"></image>
 							<view class="hero-media-mask"></view>
 						</view>
 						<view class="hero-copy">
@@ -811,7 +811,7 @@
 			<view v-else-if="activeTab === 'company'" class="company-body">
 				<view class="company-brand">
 					<view class="brand-left">
-						<image class="brand-logo" src="/static/cicada/logo-cicada-mark.jpg" mode="aspectFit"></image>
+						<image class="brand-logo" :src="cicadaAssets.logoMark" mode="aspectFit"></image>
 						<text class="brand-name">思科达</text>
 					</view>
 					<view class="company-tools">
@@ -821,9 +821,9 @@
 				</view>
 
 				<view class="company-hero">
-					<image class="company-hero-image" src="/static/cicada/photo-building.jpg" mode="aspectFill"></image>
+					<image class="company-hero-image" :src="cicadaAssets.photoBuilding" mode="aspectFill"></image>
 					<view class="company-hero-mask"></view>
-					<image class="company-hero-logo" src="/static/cicada/logo-cicada-full.jpg" mode="aspectFit"></image>
+					<image class="company-hero-logo" :src="cicadaAssets.logoFull" mode="aspectFit"></image>
 					<view class="company-hero-title-wrap">
 						<text class="company-hero-title">十年匠心，守护诊疗安全</text>
 					</view>
@@ -945,9 +945,17 @@
 				</view>
 
 				<view class="mine-footer">
-					<image src="/static/cicada/logo-cicada-full.jpg" mode="aspectFit"></image>
+					<image :src="cicadaAssets.logoFull" mode="aspectFit"></image>
 					<text>佛山思科达 · 牙医仪器检修 v1.2.0</text>
 				</view>
+			</view>
+		</view>
+
+		<view v-else class="boot-screen">
+			<view class="boot-card">
+				<image class="boot-logo" :src="cicadaAssets.logoMark" mode="aspectFit"></image>
+				<text class="boot-title">CICADA 维修服务</text>
+				<text class="boot-desc">正在为您加载首页、报修与查询功能</text>
 			</view>
 		</view>
 
@@ -999,7 +1007,7 @@
 		<view v-if="showQr" class="modal-mask" @click="showQr = false">
 			<view class="qr-modal" @click.stop>
 				<text class="modal-close tap" @click="showQr = false">×</text>
-				<image class="qr-logo" src="/static/cicada/logo-cicada-full.jpg" mode="aspectFit"></image>
+				<image class="qr-logo" :src="cicadaAssets.logoFull" mode="aspectFit"></image>
 				<text class="qr-title">关注官方公众号</text>
 				<text class="qr-subtitle">获取最新维修指南 / 售后政策</text>
 				<view class="qr-image-wrap">
@@ -1044,6 +1052,7 @@
 
 <script setup>
 import { computed, onMounted, ref } from 'vue'
+import { cicadaAssets } from '@/config/cicada-assets'
 import {
 	getContact,
 	getCustomerService,
@@ -1064,12 +1073,16 @@ import {
 	uploadVideo
 } from '@/api/content'
 
+const bootStart = Date.now()
+const logBoot = (stage) => console.log('[index-boot]', stage, Date.now() - bootStart)
+
 const copied = ref('')
 const showQr = ref(false)
 const showOfficial = ref(false)
 const showRepairTools = ref(false)
-const surveyPosterUrl = '/static/cicada/survey-poster.png'
+const surveyPosterUrl = cicadaAssets.surveyPoster
 const moduleHeadPaddingTop = ref(72)
+const pageBootReady = ref(false)
 const searchKeyword = ref('')
 const activeTab = ref('home')
 const activeModule = ref('')
@@ -1130,6 +1143,8 @@ const repairProducts = ref([defaultRepairProduct()])
 
 let repairProductSeed = 1
 let repairMediaSeed = 1
+
+logBoot('base refs ready')
 
 const basics = [
 	{ id: 'repair', title: '立即报修', icon: 'repair', color: '#1E6FE0', bg: '#DCE6FA' },
@@ -1383,9 +1398,11 @@ const warrantyTerms = [
 	{ title: '四、维修续保', lines: ['所有维修品，同一故障问题，更换同样的零件，非人为因素，续保三个月。'] }
 ]
 
+logBoot('static blocks ready')
+
 const docModuleIds = ['fees', 'guide-quick', 'guide-repair', 'guide-query', 'guide-invoice']
 
-const docMap = ref({
+const docFallbacks = {
 	fees: {
 		title: '收费指南',
 		icon: 'money',
@@ -1449,7 +1466,11 @@ const docMap = ref({
 			{ title: '三、开票时效', lines: ['电子发票申请后 24 小时内开具；纸质发票每周二、周五统一邮寄。'], marker: '' }
 		]
 	}
-})
+}
+
+const docMap = ref({})
+
+logBoot('doc fallbacks ready')
 
 const contactInfo = ref({
 	companyName: '桂林市啄木鸟医疗器械有限公司',
@@ -1460,14 +1481,14 @@ const contactInfo = ref({
 })
 
 const customerService = ref({
-	qrcodeUrl: '/static/cicada/qr-wechat.jpg',
+	qrcodeUrl: cicadaAssets.qrWechat,
 	title: '调研有礼',
 	description: '扫码添加客服微信，参与调研即可获得精美礼品',
 	wechat: 'CSD-Service-001'
 })
 
 const wechatInfo = ref({
-	qrcodeUrl: '/static/cicada/qr-wechat.jpg',
+	qrcodeUrl: cicadaAssets.qrWechat,
 	name: '思科达售后',
 	description: '获取最新维修指南 / 售后政策'
 })
@@ -1543,7 +1564,7 @@ const splitWorkTimes = (workTime = '') => {
 	})
 }
 
-const normalizeQrUrl = (url) => url || '/static/cicada/qr-wechat.jpg'
+const normalizeQrUrl = (url) => url || cicadaAssets.qrWechat
 
 const applyContact = (data = {}) => {
 	const next = normalizeContact(data)
@@ -1620,13 +1641,15 @@ const normalizePackageResult = (data = {}) => {
 		reached: Number.isFinite(Number(data.reached)) ? Number(data.reached) : 1
 	}
 
+	const reachedValue = data.reached !== undefined && data.reached !== null ? data.reached : meta.reached
+
 	return {
 		trackingNo: data.trackingNo || data.expressNo || data.waybillNo || packageQuery.value.trackingNo,
 		company: data.company || data.expressCompany || data.logisticsCompany || '',
 		orderId: data.orderId || data.repairOrderId || '',
 		status: data.statusText || data.statusName || meta.status,
 		tone: data.tone || meta.tone,
-		reached: Math.max(0, Math.min(packageFlow.length - 1, Number(data.reached ?? meta.reached) || 0)),
+		reached: Math.max(0, Math.min(packageFlow.length - 1, Number(reachedValue) || 0)),
 		timeline: normalizePackageTimeline(data.timeline || data.logs || data.records)
 	}
 }
@@ -1701,7 +1724,7 @@ const applyFaultTypes = (list = []) => {
 const updateDoc = (key, doc) => {
 	docMap.value = {
 		...docMap.value,
-		[key]: normalizeDoc(doc, docMap.value[key] || {})
+		[key]: normalizeDoc(doc, docFallbacks[key] || docMap.value[key] || {})
 	}
 }
 
@@ -1717,7 +1740,10 @@ const statusItems = computed(() => {
 		{ all: 0, pending: 0, fixing: 0, shipped: 0 }
 	)
 
-	return defaultStatusItems.map((item) => ({ ...item, count: counts[item.id] ?? item.count }))
+	return defaultStatusItems.map((item) => ({
+		...item,
+		count: counts[item.id] !== undefined && counts[item.id] !== null ? counts[item.id] : item.count
+	}))
 })
 
 const orderTabs = computed(() => [
@@ -1727,7 +1753,10 @@ const orderTabs = computed(() => [
 	`已发货 ${orderList.value.filter((item) => item.statusGroup === '已发货').length}`
 ])
 
-const diagProductLabel = computed(() => diagProducts.value.find((item) => item.id === diagProduct.value)?.title || '')
+const diagProductLabel = computed(() => {
+	const product = diagProducts.value.find((item) => item.id === diagProduct.value)
+	return product ? product.title : ''
+})
 const diagFaultOptions = computed(() => {
 	if (diagProduct.value) return diagFaultMap.value[diagProduct.value] || []
 	return Array.from(new Set(Object.values(diagFaultMap.value).flat()))
@@ -1767,7 +1796,7 @@ const diagSheetOptions = computed(() => {
 	return diagFaultOptions.value.map((title) => ({ id: title, title, active: title === diagFault.value }))
 })
 const warrantyDoc = computed(() => docMap.value.warranty || {})
-const activeDoc = computed(() => docMap.value[activeModule.value] || docMap.value['guide-quick'])
+const activeDoc = computed(() => docMap.value[activeModule.value] || docFallbacks[activeModule.value] || docFallbacks['guide-quick'] || {})
 const isDocModule = computed(() => docModuleIds.includes(activeModule.value))
 const feedbackContact = computed(() => feedbackContacts.find((item) => item.id === feedbackContactKind.value) || feedbackContacts[0])
 const receiverLastIndex = computed(() => receiver.value.length - 1)
@@ -1791,6 +1820,8 @@ const detailOrder = computed(() => {
 	)
 })
 
+logBoot('computed state ready')
+
 let copyTimer = null
 
 const initModuleSafeArea = () => {
@@ -1799,7 +1830,7 @@ const initModuleSafeArea = () => {
 		const menuRect = uni.getMenuButtonBoundingClientRect ? uni.getMenuButtonBoundingClientRect() : null
 		const pixelRatio = 750 / (systemInfo.windowWidth || 375)
 
-		if (menuRect?.top) {
+		if (menuRect && menuRect.top) {
 			const navBottom = menuRect.top + menuRect.height + Math.max(menuRect.top - (systemInfo.statusBarHeight || 0), 8)
 			moduleHeadPaddingTop.value = Math.ceil(navBottom * pixelRatio) + 8
 			return
@@ -1909,7 +1940,7 @@ const normalizeRepairProducts = (products = []) => {
 const restoreRepairDraft = () => {
 	try {
 		const draft = uni.getStorageSync(repairDraftKey)
-		if (!draft?.repairForm && !draft?.repairProducts) return
+		if (!draft || (!draft.repairForm && !draft.repairProducts)) return
 
 		repairForm.value = {
 			...defaultRepairForm(),
@@ -2105,7 +2136,7 @@ const submitRepair = async () => {
 
 	try {
 		const res = await submitRepairOrder(buildRepairPayload())
-		submittedOrderId.value = res?.orderId || submittedOrderId.value
+		submittedOrderId.value = res && res.orderId ? res.orderId : submittedOrderId.value
 		openModule('repair-success')
 		loadRemoteContent()
 	} catch (error) {
@@ -2129,7 +2160,7 @@ const loadFaultResult = async () => {
 	try {
 		const result = await searchFault({
 			productType: diagProduct.value,
-			faultTypeId: localRecord?.faultTypeId || localRecord?.id || ''
+			faultTypeId: localRecord ? (localRecord.faultTypeId || localRecord.id || '') : ''
 		})
 		diagResult.value = result || localRecord || null
 	} catch (error) {
@@ -2174,7 +2205,7 @@ const onDateChange = (productIndex, e) => {
 
 const previewVoucher = (productIndex, voucherIndex) => {
 	const product = repairProducts.value[productIndex]
-	const voucher = product?.voucherList?.[voucherIndex]
+	const voucher = product && product.voucherList ? product.voucherList[voucherIndex] : null
 	if (!voucher) return
 
 	const urls = (product.voucherList || []).map((item) => item.url || item.path).filter(Boolean)
@@ -2254,7 +2285,7 @@ const saveAddress = async () => {
 			await updateAddress(payload)
 		} else {
 			const res = await addAddress(payload)
-			addressForm.value.addressId = res?.addressId || ''
+			addressForm.value.addressId = res && res.addressId ? res.addressId : ''
 		}
 		uni.showToast({ title: '地址已保存', icon: 'success' })
 	} catch (error) {
@@ -2291,7 +2322,7 @@ const loginSuccess = async () => {
 	try {
 		const loginRes = await uni.login({ provider: 'weixin' })
 		const res = await wechatLogin({ code: loginRes.code })
-		if (res?.token) uni.setStorageSync('token', res.token)
+		if (res && res.token) uni.setStorageSync('token', res.token)
 		logged.value = true
 		activeModule.value = ''
 		activeTab.value = 'mine'
@@ -2391,9 +2422,17 @@ const loadRemoteContent = async () => {
 }
 
 onMounted(() => {
+	logBoot('onMounted start')
 	initModuleSafeArea()
-	restoreRepairDraft()
-	loadRemoteContent()
+	setTimeout(() => {
+		pageBootReady.value = true
+		logBoot('full page enabled')
+	}, 80)
+	setTimeout(() => {
+		logBoot('deferred boot start')
+		restoreRepairDraft()
+		loadRemoteContent()
+	}, 220)
 })
 </script>
 
@@ -2411,6 +2450,52 @@ onMounted(() => {
 	width: 100%;
 	min-height: 100vh;
 	background: #E8EEFA;
+}
+
+.boot-screen {
+	min-height: 100vh;
+	padding: 48rpx;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background:
+		radial-gradient(circle at top, rgba(30, 111, 224, 0.14), transparent 42%),
+		linear-gradient(180deg, #EEF4FF 0%, #E8EEFA 100%);
+	box-sizing: border-box;
+}
+
+.boot-card {
+	width: 100%;
+	max-width: 560rpx;
+	padding: 56rpx 40rpx;
+	border-radius: 36rpx;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	background: rgba(255, 255, 255, 0.92);
+	box-shadow: 0 20rpx 56rpx rgba(15, 31, 58, 0.08);
+	box-sizing: border-box;
+}
+
+.boot-logo {
+	width: 148rpx;
+	height: 148rpx;
+}
+
+.boot-title {
+	margin-top: 24rpx;
+	font-size: 36rpx;
+	font-weight: 700;
+	line-height: 1.35;
+	color: #0F1F3A;
+}
+
+.boot-desc {
+	margin-top: 14rpx;
+	font-size: 26rpx;
+	line-height: 1.7;
+	text-align: center;
+	color: #5A6C8D;
 }
 
 .home-body {

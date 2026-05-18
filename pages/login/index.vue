@@ -25,7 +25,7 @@
 
 		<view class="login-content">
 			<view class="brand-section">
-				<image class="brand-logo" src="/static/cicada/brand-cicada-tooth-blue.png" mode="aspectFit"></image>
+				<image class="brand-logo" :src="cicadaAssets.brandToothBlue" mode="aspectFit"></image>
 				<text class="brand-name">佛山思科达</text>
 				<text class="brand-desc">牙医仪器检修</text>
 			</view>
@@ -94,6 +94,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { sendSmsCode, loginWithCode } from '@/api/auth.js'
+import { cicadaAssets } from '@/config/cicada-assets'
 
 const phone = ref('')
 const code = ref('')

@@ -87,7 +87,7 @@
 		</view>
 
 		<view class="footer-brand">
-			<image class="footer-logo" src="/static/cicada/logo-cicada-full.jpg" mode="aspectFit"></image>
+			<image class="footer-logo" :src="cicadaAssets.logoFull" mode="aspectFit"></image>
 			<text>佛山思科达 · 牙医仪器检修 v1.2.0</text>
 		</view>
 
@@ -102,6 +102,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import { cicadaAssets } from '@/config/cicada-assets'
 
 const logged = ref(false)
 

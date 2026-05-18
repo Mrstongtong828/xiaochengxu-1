@@ -134,6 +134,19 @@ export const baseURL = 'https://api.cisco-d.com/api/v1'
 unpackage/dist/dev/mp-weixin
 ```
 
+## CDN 图片资源
+
+为了避免微信小程序主包过大，公司图片、海报和二维码不再放在 `static/cicada`，而是放在 `cdn-assets/cicada` 作为待上传资源。
+
+操作流程：
+
+1. 将 `cdn-assets/cicada` 中的图片上传到 uniCloud 云存储。
+2. 获取每张图片的 HTTPS 链接。
+3. 在 `config/cicada-assets.js` 中替换占位链接。
+4. 在微信公众平台 `开发管理 -> 服务器域名 -> downloadFile 合法域名` 添加对应 CDN 域名。
+
+详细说明见 [cdn-assets/README.md](./cdn-assets/README.md)。
+
 ## 给客户预览
 
 如果项目还没有正式发布，但需要让客户先看效果，建议按下面方式操作：

@@ -28,7 +28,7 @@
 		<view class="page-body">
 			<view class="brand-bar">
 				<view class="brand-left">
-					<image class="brand-logo" src="/static/cicada/logo-cicada-mark.jpg" mode="aspectFit"></image>
+					<image class="brand-logo" :src="cicadaAssets.logoMark" mode="aspectFit"></image>
 					<text class="brand-name">思科达</text>
 				</view>
 				<view class="brand-actions">
@@ -38,9 +38,9 @@
 			</view>
 
 			<view class="company-hero">
-				<image class="hero-image" src="/static/cicada/photo-building.jpg" mode="aspectFill"></image>
+				<image class="hero-image" :src="cicadaAssets.photoBuilding" mode="aspectFill"></image>
 				<view class="hero-mask"></view>
-				<image class="hero-logo" src="/static/cicada/logo-cicada-full.jpg" mode="aspectFit"></image>
+				<image class="hero-logo" :src="cicadaAssets.logoFull" mode="aspectFit"></image>
 				<view class="hero-title-wrap">
 					<text class="hero-title">十年匠心，守护诊疗安全</text>
 				</view>
@@ -92,7 +92,7 @@
 
 			<view class="follow-card">
 				<view class="qr-wrap">
-					<image class="qr-image" src="/static/cicada/qr-wechat.jpg" mode="aspectFill" show-menu-by-longpress></image>
+					<image class="qr-image" :src="cicadaAssets.qrWechat" mode="aspectFill" show-menu-by-longpress></image>
 				</view>
 				<text class="follow-title">关注官方公众号</text>
 				<text class="follow-desc">获取最新的维保优惠政策、设备保养秘籍以及一键预约上门服务。</text>
@@ -118,6 +118,8 @@
 </template>
 
 <script setup>
+import { cicadaAssets } from '@/config/cicada-assets'
+
 const advantages = [
 	{ icon: 'lightning', title: '极速响应', desc: '2小时内接单回复、24小时内到场检修，将诊所停工损失降至最低。' },
 	{ icon: 'microscope', title: '精密检测', desc: '引进国际领先的工业级内窥镜与频率分析仪，精准识别隐匿故障。' }
