@@ -56,7 +56,7 @@
 					</view>
 				</view>
 				<view class="status-grid">
-					<view v-for="item in statusItems" :key="item.id" class="status-item tap" @click="go('orders')">
+					<view v-for="item in statusItems" :key="item.id" class="status-item tap" @click="goOrder(item.type)">
 						<view class="status-icon" :style="{ color: item.color, backgroundColor: item.bg }">
 							<view :class="['glyph', 'glyph-' + item.icon]"><view></view></view>
 							<text v-if="item.count > 0" class="badge">{{ item.count }}</text>
@@ -113,17 +113,18 @@ onMounted(() => {
 })
 
 const statusItems = [
-	{ id: 'all', title: '全部', count: 3, color: '#1E6FE0', bg: 'rgba(30, 111, 224, 0.09)', icon: 'invoice' },
-	{ id: 'pending', title: '待处理', count: 1, color: '#F59E0B', bg: 'rgba(245, 158, 11, 0.09)', icon: 'track' },
-	{ id: 'fixing', title: '维修中', count: 1, color: '#0EA5E9', bg: 'rgba(14, 165, 233, 0.09)', icon: 'repair' },
-	{ id: 'shipped', title: '已发货', count: 1, color: '#10B981', bg: 'rgba(16, 185, 129, 0.09)', icon: 'truck' }
+	{ id: 'all', title: '全部', count: 3, color: '#1E6FE0', bg: 'rgba(30, 111, 224, 0.09)', icon: 'invoice', type: 0 },
+	{ id: 'pending', title: '待处理', count: 1, color: '#F59E0B', bg: 'rgba(245, 158, 11, 0.09)', icon: 'track', type: 1 },
+	{ id: 'fixing', title: '维修中', count: 1, color: '#0EA5E9', bg: 'rgba(14, 165, 233, 0.09)', icon: 'repair', type: 2 },
+	{ id: 'shipped', title: '已发货', count: 1, color: '#10B981', bg: 'rgba(16, 185, 129, 0.09)', icon: 'truck', type: 3 },
+	{ id: 'not_invoiced', title: '未开票', count: 0, color: '#F59E0B', bg: 'rgba(245, 158, 11, 0.09)', icon: 'invoice', type: 4 },
+	{ id: 'invoiced', title: '已开票', count: 0, color: '#10B981', bg: 'rgba(16, 185, 129, 0.09)', icon: 'check', type: 5 }
 ]
 
 const menus = [
 	{ icon: 'pin', title: '收货地址管理', desc: '表单形式 · 1 个默认地址', go: 'address' },
 	{ icon: 'edit', title: '投诉和建议', desc: '问题反馈 / 改进建议', go: 'feedback' },
 	{ icon: 'box', title: '我的产品', desc: '已登记 3 件设备', go: 'products' },
-	{ icon: 'invoice', title: '我的发票', desc: '电子发票/纸质发票', go: 'guide-invoice' },
 	{ icon: 'shield', title: '保修政策', desc: '三重保修条款', go: 'warranty' },
 	{ icon: 'phone', title: '联系我们', desc: '在线客服 / 服务热线 / 地址', go: 'contact' }
 ]
@@ -172,6 +173,13 @@ const go = (id) => {
 	if (id === 'mine') return
 	uni.navigateTo({
 		url: routes[id] || `/pages/${id}/index`,
+		fail: () => uni.showToast({ title: '页面建设中', icon: 'none' })
+	})
+}
+
+const goOrder = (type) => {
+	uni.navigateTo({
+		url: `/pages/index/index?type=${type}`,
 		fail: () => uni.showToast({ title: '页面建设中', icon: 'none' })
 	})
 }

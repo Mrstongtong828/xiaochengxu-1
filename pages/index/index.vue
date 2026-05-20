@@ -149,19 +149,19 @@
 					<text>联系我们</text>
 				</view>
 				<view class="contact-mini-list">
-					<view class="contact-mini-card tap" @click="go('contact')">
+					<button class="contact-mini-card tap" open-type="contact" @click="openCustomerService">
 						<view class="contact-mini-icon"><view class="glyph glyph-chat"><view class="glyph-extra"></view></view></view>
 						<view class="contact-mini-copy">
 							<text>在线客服</text>
 							<text>8:00 to 21:00（节假日除外）</text>
 						</view>
 						<view class="chevron"></view>
-					</view>
-					<view class="contact-mini-card">
+					</button>
+					<view class="contact-mini-card tap" @click="makePhoneCall">
 						<view class="contact-mini-icon"><view class="glyph glyph-phone"><view class="glyph-extra"></view></view></view>
 						<view class="contact-mini-copy">
 							<text>服务热线</text>
-							<text class="brand-text">400-888-999</text>
+							<text class="brand-text">13929198537</text>
 						</view>
 					</view>
 				</view>
@@ -178,8 +178,8 @@
 						<text>{{ copied === 'all' ? '已复制' : '一键复制以上收件信息' }}</text>
 					</view>
 				</view>
-				<view class="repair-fab repair-fab-chat tap" @click="go('contact')"><view class="glyph glyph-chat"><view class="glyph-extra"></view></view></view>
-				<view class="repair-fab repair-fab-phone tap" @click="go('contact')"><view class="glyph glyph-phone"><view class="glyph-extra"></view></view></view>
+				<button class="repair-fab repair-fab-chat tap" open-type="contact" @click="openCustomerService"><view class="glyph glyph-chat"><view class="glyph-extra"></view></view></button>
+				<view class="repair-fab repair-fab-phone tap" @click="makePhoneCall"><view class="glyph glyph-phone"><view class="glyph-extra"></view></view></view>
 				<view class="repair-bottom-bar">
 					<view class="bottom-more tap" @click="showRepairTools = true"><view></view><text>工具</text></view>
 					<view class="bottom-submit tap" @click="submitRepair">立即提交报修</view>
@@ -631,7 +631,7 @@
 			<view v-if="activeTab === 'home'" class="home-body">
 				<view class="brand-bar">
 					<view class="brand-left">
-						<image class="brand-logo" :src="cicadaAssets.logoMark" mode="aspectFit"></image>
+						<image class="brand-logo" src="/static/new-logo.png" mode="aspectFit"></image>
 						<text class="brand-name">思科达</text>
 					</view>
 					<view class="wechat-button tap" @click="showQr = true">
@@ -742,7 +742,7 @@
 				<view class="section section-contact">
 					<text class="section-title">联系我们</text>
 					<view class="two-grid">
-						<view class="contact-card tap" @click="go('contact')">
+						<button class="contact-card tap" open-type="contact" @click="openCustomerService">
 							<view class="contact-icon">
 								<view class="glyph glyph-chat">
 									<view class="glyph-extra"></view>
@@ -752,8 +752,8 @@
 								<text class="contact-title">在线客服</text>
 								<text class="contact-desc">8:00至21:00</text>
 							</view>
-						</view>
-						<view class="contact-card tap" @click="go('contact')">
+						</button>
+						<view class="contact-card tap" @click="makePhoneCall">
 							<view class="contact-icon">
 								<view class="glyph glyph-phone">
 									<view class="glyph-extra"></view>
@@ -761,7 +761,7 @@
 							</view>
 							<view class="contact-copy">
 								<text class="contact-title">服务热线</text>
-								<text class="contact-desc">400-888-999</text>
+								<text class="contact-desc">13929198537</text>
 							</view>
 						</view>
 					</view>
@@ -858,7 +858,7 @@
 						<text>业务范围</text>
 					</view>
 					<view class="business-list">
-						<view v-for="(item, index) in business" :key="item.title" class="business-card tap" @click="go('repair')">
+						<view v-for="(item, index) in business" :key="item.title" class="business-card">
 							<view class="business-visual" :style="{ background: item.gradient }">
 								<view :class="['device-shape', 'device-' + index]"></view>
 							</view>
@@ -866,7 +866,6 @@
 								<text class="business-title">{{ item.title }}</text>
 								<text class="business-desc">{{ item.desc }}</text>
 							</view>
-							<view class="chevron"></view>
 						</view>
 					</view>
 				</view>
@@ -877,10 +876,7 @@
 					</view>
 					<text class="follow-title">关注官方公众号</text>
 					<text class="follow-desc">获取最新的维保优惠政策、设备保养秘籍以及一键预约上门服务。</text>
-					<view class="follow-button tap" @click="go('contact')">
-						<view class="plus-icon"></view>
-						<text>立即关注</text>
-					</view>
+					<official-account class="official-account-btn"></official-account>
 				</view>
 			</view>
 
@@ -915,7 +911,7 @@
 						</view>
 					</view>
 					<view class="status-grid">
-						<view v-for="item in statusItems" :key="item.id" class="status-item tap" @click="go('orders')">
+						<view v-for="item in statusItems" :key="item.id" class="status-item tap" @click="go('orders', item.type)">
 							<view class="status-icon" :style="{ color: item.color, backgroundColor: item.bg }">
 								<view :class="['glyph', 'glyph-' + item.icon]"><view class="glyph-extra"></view></view>
 								<text v-if="item.count" class="badge">{{ item.count }}</text>
@@ -1167,10 +1163,10 @@ const guides = [
 ]
 
 const receiver = ref([
-	{ label: '收件公司', value: '桂林市啄木鸟医疗器械有限公司' },
-	{ label: '收件人', value: '售后李山' },
-	{ label: '收件电话', value: '13977382317' },
-	{ label: '收件地址', value: '广西壮族自治区桂林市七星区朝阳路国家高新区信息产业园' }
+	{ label: '收件公司', value: '佛山市思科达医疗器械有限公司' },
+	{ label: '收件人', value: '姚兵' },
+	{ label: '收件电话', value: '13929198537' },
+	{ label: '收件地址', value: '广东省佛山市南海区狮山镇罗村广东新光源核心基地B5座五楼' }
 ])
 
 const advantages = [
@@ -1185,17 +1181,18 @@ const business = [
 ]
 
 const defaultStatusItems = [
-	{ id: 'all', title: '全部', count: 3, color: '#1E6FE0', bg: 'rgba(30, 111, 224, 0.09)', icon: 'invoice' },
-	{ id: 'pending', title: '待处理', count: 1, color: '#F59E0B', bg: 'rgba(245, 158, 11, 0.09)', icon: 'track' },
-	{ id: 'fixing', title: '维修中', count: 1, color: '#0EA5E9', bg: 'rgba(14, 165, 233, 0.09)', icon: 'repair' },
-	{ id: 'shipped', title: '已发货', count: 1, color: '#10B981', bg: 'rgba(16, 185, 129, 0.09)', icon: 'truck' }
+	{ id: 'all', title: '全部', count: 3, color: '#1E6FE0', bg: 'rgba(30, 111, 224, 0.09)', icon: 'invoice', type: 0 },
+	{ id: 'pending', title: '待处理', count: 1, color: '#F59E0B', bg: 'rgba(245, 158, 11, 0.09)', icon: 'track', type: 1 },
+	{ id: 'fixing', title: '维修中', count: 1, color: '#0EA5E9', bg: 'rgba(14, 165, 233, 0.09)', icon: 'repair', type: 2 },
+	{ id: 'shipped', title: '已发货', count: 1, color: '#10B981', bg: 'rgba(16, 185, 129, 0.09)', icon: 'truck', type: 3 },
+	{ id: 'not_invoiced', title: '未开票', count: 0, color: '#F59E0B', bg: 'rgba(245, 158, 11, 0.09)', icon: 'invoice', type: 4 },
+	{ id: 'invoiced', title: '已开票', count: 0, color: '#10B981', bg: 'rgba(16, 185, 129, 0.09)', icon: 'check', type: 5 }
 ]
 
 const menus = [
 	{ icon: 'pin', title: '收货地址管理', desc: '表单形式 · 1 个默认地址', go: 'address' },
 	{ icon: 'edit', title: '投诉和建议', desc: '问题反馈 / 改进建议', go: 'feedback' },
 	{ icon: 'box', title: '我的产品', desc: '已登记 3 件设备', go: 'products' },
-	{ icon: 'invoice', title: '我的发票', desc: '电子发票/纸质发票', go: 'guide-invoice' },
 	{ icon: 'shield', title: '保修政策', desc: '三重保修条款', go: 'warranty' },
 	{ icon: 'phone', title: '联系我们', desc: '在线客服 / 服务热线 / 地址', go: 'contact' }
 ]
@@ -1473,10 +1470,10 @@ const docMap = ref({})
 logBoot('doc fallbacks ready')
 
 const contactInfo = ref({
-	companyName: '桂林市啄木鸟医疗器械有限公司',
-	phone: '139 7738 2317',
+	companyName: '佛山市思科达医疗器械有限公司',
+	phone: '13929198537',
 	email: '',
-	address: '广西壮族自治区桂林市七星区朝阳路国家高新区信息产业园',
+	address: '广东省佛山市南海区狮山镇罗村广东新光源核心基地B5座五楼',
 	workTime: '周一至周五 08:00 - 21:00'
 })
 
@@ -1494,8 +1491,8 @@ const wechatInfo = ref({
 })
 
 const contactHotlines = ref([
-	{ title: '售后技术', number: '139 7738 2317', time: '工作日 08:00-21:00' },
-	{ title: '购买咨询', number: '139 7738 2398', time: '工作日 08:00-21:00' }
+	{ title: '售后技术', number: '13929198537', time: '工作日 08:00-21:00' },
+	{ title: '购买咨询', number: '13929198537', time: '工作日 08:00-21:00' }
 ])
 
 const workTimes = ref([
@@ -1750,7 +1747,9 @@ const orderTabs = computed(() => [
 	`全部 ${orderList.value.length}`,
 	`待处理 ${orderList.value.filter((item) => item.statusGroup === '待处理').length}`,
 	`维修中 ${orderList.value.filter((item) => item.statusGroup === '维修中').length}`,
-	`已发货 ${orderList.value.filter((item) => item.statusGroup === '已发货').length}`
+	`已发货 ${orderList.value.filter((item) => item.statusGroup === '已发货').length}`,
+	`未开票 ${orderList.value.filter((item) => !item.invoiced).length}`,
+	`已开票 ${orderList.value.filter((item) => item.invoiced).length}`
 ])
 
 const diagProductLabel = computed(() => {
@@ -1808,6 +1807,8 @@ const filteredOrderList = computed(() => {
 	if (activeOrdersTab.value.includes('待处理')) return orderList.value.filter((item) => item.statusGroup === '待处理')
 	if (activeOrdersTab.value.includes('维修中')) return orderList.value.filter((item) => item.statusGroup === '维修中')
 	if (activeOrdersTab.value.includes('已发货')) return orderList.value.filter((item) => item.statusGroup === '已发货')
+	if (activeOrdersTab.value.includes('未开票')) return orderList.value.filter((item) => !item.invoiced)
+	if (activeOrdersTab.value.includes('已开票')) return orderList.value.filter((item) => item.invoiced)
 	return orderList.value
 })
 const detailOrder = computed(() => {
@@ -1875,11 +1876,18 @@ const previewSurveyPoster = () => {
 	})
 }
 
-const openModule = (id) => {
+const openModule = (id, type) => {
 	previousModule.value = activeModule.value
 	activeModule.value = id
 	showOfficial.value = false
 	showQr.value = false
+	
+	if (id === 'orders' && type !== undefined) {
+		const typeMap = ['全部', '待处理', '维修中', '已发货', '未开票', '已开票']
+		if (typeMap[type]) {
+			activeOrdersTab.value = typeMap[type]
+		}
+	}
 }
 
 const closeModule = () => {
@@ -2128,9 +2136,11 @@ const buildRepairPayload = () => {
 }
 
 const submitRepair = async () => {
-	const invalid = repairProducts.value.some((item) => !item.model || !item.serial || !item.faultDesc || !item.media.length)
-	if (invalid || !repairForm.value.receiverName || !repairForm.value.receiverPhone || !repairForm.value.receiverAddress) {
-		uni.showToast({ title: '请完善必填报修信息', icon: 'none' })
+	// 必填项校验：产品型号、产品序列号、故障描述、物流公司、运单号
+	// 其他字段（购买凭证、产品名称、购买日期、故障图片/视频）均为选填
+	const hasInvalidProduct = repairProducts.value.some((item) => !item.model || !item.serial || !item.faultDesc)
+	if (hasInvalidProduct || !repairForm.value.logisticsCompany || !repairForm.value.trackingNo) {
+		uni.showToast({ title: '请完善必填项信息', icon: 'none' })
 		return
 	}
 
@@ -2336,7 +2346,7 @@ const loginSuccess = async () => {
 	}
 }
 
-const go = (id) => {
+const go = (id, type) => {
 	if (tabRoutes[id]) {
 		activeTab.value = id
 		activeModule.value = ''
@@ -2345,15 +2355,39 @@ const go = (id) => {
 	}
 
 	if (moduleMap[id]) {
-		openModule(id)
+		openModule(id, type)
 		return
 	}
 
 	uni.showToast({ title: '功能已接入当前页面', icon: 'none' })
 }
 
+const openCustomerService = () => {
+	uni.showToast({ title: '正在连接客服...', icon: 'none' })
+}
+
+const makePhoneCall = () => {
+	uni.makePhoneCall({
+		phoneNumber: '13929198537',
+		success: () => {},
+		fail: (error) => {
+			console.warn('make phone call failed:', error)
+			uni.showToast({ title: '拨打电话失败', icon: 'none' })
+		}
+	})
+}
+
 const handleSearch = () => {
-	go('guide-query')
+	// 待后端接口建立后恢复
+	// go('guide-query')
+	
+	// 临时拦截：搜索功能正在优化中
+	uni.showModal({
+		title: '提示',
+		content: '搜索功能正在优化中，敬请期待！',
+		showCancel: false,
+		confirmText: '知道了'
+	})
 }
 
 const goOfficial = () => {
@@ -4664,6 +4698,16 @@ onMounted(() => {
 	height: 8rpx;
 	border-left: 4rpx solid currentColor;
 	border-bottom: 4rpx solid currentColor;
+}
+
+.glyph-check::before {
+	left: 8rpx;
+	top: 16rpx;
+	width: 24rpx;
+	height: 12rpx;
+	border-left: 4rpx solid currentColor;
+	border-bottom: 4rpx solid currentColor;
+	transform: rotate(-45deg);
 }
 
 .glyph-shield::before {

@@ -1,0 +1,13 @@
+{
+  "pages": [
+    "pages/index/index",
+    "pages/login/index"
+  ],
+  "window": {
+    "navigationBarTextStyle": "black",
+    "navigationBarTitleText": "牙医仪器检修",
+    "navigationBarBackgroundColor": "#E8EEFA",
+    "backgroundColor": "#E8EEFA"
+  },
+  "usingComponents": {}
+}
