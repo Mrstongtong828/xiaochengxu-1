@@ -5,6 +5,7 @@ export const cicadaAssets = {
 	brandToothBlueOriginal: 'https://mp-f0350304-ff3b-4fb8-afcb-ac5e3253da2a.cdn.bspapp.com/brand-cicada-tooth-blue.png',
 	logoMark: 'https://mp-f0350304-ff3b-4fb8-afcb-ac5e3253da2a.cdn.bspapp.com/logo-cicada-mark.jpg',
 	logoFull: 'https://mp-f0350304-ff3b-4fb8-afcb-ac5e3253da2a.cdn.bspapp.com/logo-cicada-full.jpg',
+	logoNew: 'https://p.ipic.vip/hh0966.jpg',
 	photoFactory: 'https://mp-f0350304-ff3b-4fb8-afcb-ac5e3253da2a.cdn.bspapp.com/photo-factory.jpg',
 	photoBuilding: 'https://mp-f0350304-ff3b-4fb8-afcb-ac5e3253da2a.cdn.bspapp.com/photo-building.jpg',
 	qrWechat: 'https://mp-f0350304-ff3b-4fb8-afcb-ac5e3253da2a.cdn.bspapp.com/qr-wechat.jpg',

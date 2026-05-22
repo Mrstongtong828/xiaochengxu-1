@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "openapi": ["uniCloud.httpclient.request"]
+  },
+  "parameters": {
+    "code": "string"
+  }
+}

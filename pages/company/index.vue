@@ -29,38 +29,66 @@
 			<view class="brand-bar">
 				<view class="brand-left">
 					<image class="brand-logo" :src="cicadaAssets.logoMark" mode="aspectFit"></image>
-					<text class="brand-name">思科达</text>
-				</view>
-				<view class="brand-actions">
-					<view class="icon-search tap"></view>
-					<view class="icon-bell tap"></view>
+					<view class="brand-copy">
+						<text class="brand-name">CICADA Dental</text>
+						<text class="brand-subname">登煌医疗 · 思科达</text>
+					</view>
 				</view>
 			</view>
 
 			<view class="company-hero">
-				<image class="hero-image" :src="cicadaAssets.photoBuilding" mode="aspectFill"></image>
+				<image class="hero-image" :src="cicadaAssets.photoFactory" mode="aspectFill"></image>
 				<view class="hero-mask"></view>
 				<image class="hero-logo" :src="cicadaAssets.logoFull" mode="aspectFit"></image>
 				<view class="hero-title-wrap">
-					<text class="hero-title">十年匠心，守护诊疗安全</text>
+					<text class="hero-kicker">CICADA Dental · 登煌医疗</text>
+					<text class="hero-title">20年专注口腔设备研发制造</text>
+					<text class="hero-subtitle">从光固化设备起步，持续拓展根管治疗、电动微马达、牙科手机与牙齿美白等专业产品。</text>
 				</view>
 			</view>
 
-			<view class="company-desc">
-				<text>我们致力于为齿科机构提供全方位的精密仪器维保服务，成为中国口腔医疗领域最值得信赖的设备管家。</text>
+			<view class="stats-grid">
+				<view v-for="item in stats" :key="item.label" class="stat-card">
+					<text class="stat-value">{{ item.value }}</text>
+					<text class="stat-label">{{ item.label }}</text>
+					<text class="stat-desc">{{ item.desc }}</text>
+				</view>
+			</view>
+
+			<view class="intro-card">
+				<text class="intro-label">公司简介</text>
+				<text v-for="item in introParagraphs" :key="item" class="intro-text">{{ item }}</text>
 			</view>
 
 			<view class="section">
 				<view class="section-head">
 					<view class="section-rule"></view>
-					<text>核心优势</text>
+					<text>产品矩阵</text>
+				</view>
+				<view class="business-list">
+					<view v-for="(item, index) in productLines" :key="item.title" class="business-card">
+						<view class="business-visual" :style="{ background: item.gradient }">
+							<view :class="['device-shape', 'device-' + (index % 3)]"></view>
+						</view>
+						<view class="business-copy">
+							<text class="business-title">{{ item.title }}</text>
+							<text class="business-desc">{{ item.desc }}</text>
+						</view>
+					</view>
+				</view>
+			</view>
+
+			<view class="section">
+				<view class="section-head">
+					<view class="section-rule"></view>
+					<text>研发与质量</text>
 				</view>
 				<view class="auth-card">
 					<view class="auth-title-row">
 						<view class="icon-cert"><view></view></view>
-						<text>官方授权认证</text>
+						<text>医疗器械质量体系背书</text>
 					</view>
-					<text class="auth-desc">全品类齿科大品牌原厂技术授权，使用原厂正品零部件，确保修复精度与耐用性。</text>
+					<text class="auth-desc">CICADA 产品已取得 ISO13485、CE、FDA 及国内产品注册等资质，覆盖口腔医疗设备研发、生产与合规交付关键环节。</text>
 				</view>
 				<view class="adv-grid">
 					<view v-for="item in advantages" :key="item.title" class="adv-card">
@@ -74,18 +102,13 @@
 			<view class="section">
 				<view class="section-head">
 					<view class="section-rule"></view>
-					<text>业务范围</text>
+					<text>服务理念</text>
 				</view>
-				<view class="business-list">
-					<view v-for="(item, index) in business" :key="item.title" class="business-card tap" @click="go('repair')">
-						<view class="business-visual" :style="{ background: item.gradient }">
-							<view :class="['device-shape', 'device-' + index]"></view>
-						</view>
-						<view class="business-copy">
-							<text class="business-title">{{ item.title }}</text>
-							<text class="business-desc">{{ item.desc }}</text>
-						</view>
-						<view class="chevron"></view>
+				<view class="service-card">
+					<text class="service-title">Serve Global Dental Specialist</text>
+					<text class="service-desc">我们服务全球牙科专业人士，不只提供设备，也重视售后支持、客户体验与临床技术交流，帮助诊所提升诊疗效率与设备使用体验。</text>
+					<view class="service-tags">
+						<text v-for="item in serviceTags" :key="item">{{ item }}</text>
 					</view>
 				</view>
 			</view>
@@ -94,54 +117,70 @@
 				<view class="qr-wrap">
 					<image class="qr-image" :src="cicadaAssets.qrWechat" mode="aspectFill" show-menu-by-longpress></image>
 				</view>
-				<text class="follow-title">关注官方公众号</text>
-				<text class="follow-desc">获取最新的维保优惠政策、设备保养秘籍以及一键预约上门服务。</text>
-				<view class="follow-button tap" @click="go('contact')">
-					<view class="icon-plus"></view>
-					<text>立即关注</text>
+				<text class="follow-title">了解产品与售后支持</text>
+				<text class="follow-desc">长按识别二维码关注官方公众号，或通过电话、邮箱咨询产品资料、维修保养与售后服务。</text>
+				<view class="contact-row">
+					<view class="contact-pill tap" @click="callPhone">电话咨询</view>
+					<view class="contact-pill ghost tap" @click="copyEmail">复制邮箱</view>
 				</view>
 			</view>
 		</view>
 
 		<view class="float-actions">
-			<view class="float-btn tap" @click="go('contact')"><view class="icon-chat"></view></view>
-			<view class="float-btn tap" @click="go('contact')"><view class="icon-phone"></view></view>
+			<view class="float-btn tap" @click="copyEmail"><view class="icon-chat"></view></view>
+			<view class="float-btn tap" @click="callPhone"><view class="icon-phone"></view></view>
 		</view>
 
-		<view class="bottom-tabbar">
-			<view v-for="item in tabs" :key="item.id" class="tab-item tap" :class="{ active: item.id === 'company' }" @click="go(item.id)">
-				<view :class="['tab-icon', 'tab-' + item.icon]"><view></view></view>
-				<text>{{ item.label }}</text>
-			</view>
-		</view>
+		<BottomTabbar :tabs="tabs" active-id="company" @select="go" />
 	</view>
 </template>
 
 <script setup>
+import BottomTabbar from '@/components/BottomTabbar.vue'
 import { cicadaAssets } from '@/config/cicada-assets'
 
-const advantages = [
-	{ icon: 'lightning', title: '极速响应', desc: '2小时内接单回复、24小时内到场检修，将诊所停工损失降至最低。' },
-	{ icon: 'microscope', title: '精密检测', desc: '引进国际领先的工业级内窥镜与频率分析仪，精准识别隐匿故障。' }
+const stats = [
+	{ value: '20', label: '年品牌积累', desc: '品牌发展经验' },
+	{ value: '27', label: '产品线', desc: '覆盖诊疗场景' },
+	{ value: '195', label: '出口国家', desc: '服务全球市场' },
+	{ value: '150', label: '专利成果', desc: '持续研发创新' }
 ]
 
-const business = [
+const introParagraphs = [
+	'CICADA Dental（思科达 / 登煌医疗）是扎根佛山的口腔医疗设备研发制造品牌。',
+	'公司从光固化设备制造起步，逐步发展为覆盖根管治疗设备、牙科手机、电动微马达、牙齿美白仪及临床辅助器械的综合口腔解决方案提供商。',
+	'我们坚持以安全与质量为核心，通过研发、制造、售后和培训协同，为牙科专业人士提供稳定、高效、易用的设备支持。'
+]
+
+const advantages = [
+	{ icon: 'lightning', title: '研发制造', desc: '高标准研发中心，配套来自德国、日本、韩国等地的精密设备，支撑产品快速迭代。' },
+	{ icon: 'microscope', title: '质量合规', desc: '围绕医疗器械安全标准建立质量体系，产品满足国内外相关行业标准与注册要求。' }
+]
+
+const productLines = [
 	{
-		title: '高低速手机维修',
-		desc: '包含深度清理、动平衡校正、陶瓷轴承更换。',
+		title: '根管治疗设备',
+		desc: '覆盖根管马达、根管测量、热牙胶充填、冲洗等临床根管治疗场景。',
 		gradient: 'linear-gradient(135deg, #2C5985 0%, #6BB0CC 100%)'
 	},
 	{
-		title: '综合治疗台保养',
-		desc: '气路水路系统消毒、控制电路检修与压力调校。',
+		title: '牙科手机与电动微马达',
+		desc: '提供高速手机、增速弯机、电动微马达等高效、低噪、稳定的动力设备。',
 		gradient: 'linear-gradient(135deg, #3D6F9E 0%, #6BB0CC 100%)'
 	},
 	{
-		title: '影像系统调试',
-		desc: 'CBCT、全景机辐射校验、感光板传感器优化。',
+		title: '光固化与美白设备',
+		desc: '以光固化灯为起点，延伸到牙齿美白仪及修复、美学相关设备。',
 		gradient: 'linear-gradient(135deg, #0A4FB8 0%, #6BB0CC 100%)'
+	},
+	{
+		title: '洁牙抛光与辅助器械',
+		desc: '覆盖喷砂抛光、临床器械及耗材配套，满足诊所日常诊疗效率需求。',
+		gradient: 'linear-gradient(135deg, #1D8A96 0%, #7BC9C7 100%)'
 	}
 ]
+
+const serviceTags = ['及时售后', '临床培训', '全球服务网络']
 
 const tabs = [
 	{ id: 'home', label: '首页', icon: 'home' },
@@ -152,9 +191,7 @@ const tabs = [
 const routes = {
 	home: '/pages/index/index',
 	company: '/pages/company/index',
-	mine: '/pages/mine/index',
-	repair: '/pages/repair/index',
-	contact: '/pages/contact/index'
+	mine: '/pages/mine/index'
 }
 
 const go = (id) => {
@@ -162,6 +199,20 @@ const go = (id) => {
 	uni.navigateTo({
 		url: routes[id] || `/pages/${id}/index`,
 		fail: () => uni.showToast({ title: '页面建设中', icon: 'none' })
+	})
+}
+
+const callPhone = () => {
+	uni.makePhoneCall({
+		phoneNumber: '075785775667',
+		fail: () => uni.showToast({ title: '电话：0757-85775667', icon: 'none' })
+	})
+}
+
+const copyEmail = () => {
+	uni.setClipboardData({
+		data: 'info@cicadadental.com',
+		success: () => uni.showToast({ title: '邮箱已复制', icon: 'success' })
 	})
 }
 </script>
@@ -327,75 +378,39 @@ const go = (id) => {
 }
 
 .brand-logo {
-	width: 104rpx;
-	height: 44rpx;
+	width: 92rpx;
+	height: 92rpx;
+	border-radius: 18rpx;
+}
+
+.brand-copy {
+	padding-left: 16rpx;
+	border-left: 2rpx solid #C4D1E4;
+	display: flex;
+	flex-direction: column;
+	gap: 6rpx;
 }
 
 .brand-name {
-	padding-left: 16rpx;
-	border-left: 2rpx solid #C4D1E4;
 	font-size: 30rpx;
-	font-weight: 700;
-	line-height: 1.2;
+	font-weight: 800;
+	line-height: 1.1;
 	color: #0F1F3A;
 	letter-spacing: 1.2rpx;
 }
 
-.brand-actions {
-	display: flex;
-	align-items: center;
-	gap: 28rpx;
-	color: #324563;
+.brand-subname {
+	font-size: 22rpx;
+	line-height: 1.2;
+	color: #6B7C97;
 }
 
-.icon-search,
-.icon-bell,
 .icon-phone,
 .icon-chat,
-.icon-plus,
 .icon-cert,
-.adv-icon,
-.tab-icon {
+.adv-icon {
 	position: relative;
 	box-sizing: border-box;
-}
-
-.icon-search {
-	width: 40rpx;
-	height: 40rpx;
-	border: 4rpx solid currentColor;
-	border-radius: 999rpx;
-}
-
-.icon-search::after {
-	content: "";
-	position: absolute;
-	right: -9rpx;
-	bottom: -6rpx;
-	width: 18rpx;
-	height: 4rpx;
-	border-radius: 4rpx;
-	background: currentColor;
-	transform: rotate(45deg);
-}
-
-.icon-bell {
-	width: 36rpx;
-	height: 36rpx;
-	border: 4rpx solid currentColor;
-	border-bottom: none;
-	border-radius: 20rpx 20rpx 8rpx 8rpx;
-}
-
-.icon-bell::after {
-	content: "";
-	position: absolute;
-	left: 8rpx;
-	bottom: -10rpx;
-	width: 14rpx;
-	height: 8rpx;
-	border-bottom: 4rpx solid currentColor;
-	border-radius: 0 0 999rpx 999rpx;
 }
 
 .company-hero {
@@ -437,8 +452,22 @@ const go = (id) => {
 	left: 0;
 	right: 0;
 	bottom: 0;
-	padding: 56rpx 36rpx 36rpx;
+	padding: 72rpx 36rpx 36rpx;
+	display: flex;
+	flex-direction: column;
+	gap: 14rpx;
 	background: linear-gradient(180deg, transparent 0%, rgba(15, 31, 58, 0.55) 100%);
+}
+
+.hero-kicker {
+	align-self: flex-start;
+	padding: 8rpx 16rpx;
+	border: 1rpx solid rgba(255, 255, 255, 0.42);
+	border-radius: 999rpx;
+	background: rgba(255, 255, 255, 0.14);
+	font-size: 22rpx;
+	line-height: 1.2;
+	color: #FFFFFF;
 }
 
 .hero-title {
@@ -449,8 +478,75 @@ const go = (id) => {
 	letter-spacing: 1.2rpx;
 }
 
-.company-desc {
-	padding: 28rpx 8rpx 0;
+.hero-subtitle {
+	width: 92%;
+	font-size: 24rpx;
+	line-height: 1.58;
+	color: rgba(255, 255, 255, 0.86);
+}
+
+.stats-grid {
+	margin-top: 24rpx;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 18rpx;
+}
+
+.stat-card {
+	width: calc((100% - 18rpx) / 2);
+	padding: 26rpx 24rpx;
+	border-radius: 24rpx;
+	background: #FFFFFF;
+	box-shadow: 0 2rpx 4rpx rgba(15, 31, 58, 0.04), 0 8rpx 28rpx rgba(30, 111, 224, 0.05);
+	box-sizing: border-box;
+}
+
+.stat-value {
+	display: block;
+	font-size: 42rpx;
+	font-weight: 800;
+	line-height: 1.05;
+	color: #1E6FE0;
+}
+
+.stat-label {
+	display: block;
+	margin-top: 10rpx;
+	font-size: 25rpx;
+	font-weight: 700;
+	line-height: 1.2;
+	color: #0F1F3A;
+}
+
+.stat-desc {
+	display: block;
+	margin-top: 8rpx;
+	font-size: 21rpx;
+	line-height: 1.3;
+	color: #6B7C97;
+}
+
+.intro-card {
+	margin-top: 24rpx;
+	padding: 34rpx 32rpx;
+	border-radius: 28rpx;
+	background: linear-gradient(180deg, #FFFFFF 0%, #F7FAFF 100%);
+	box-shadow: 0 2rpx 4rpx rgba(15, 31, 58, 0.04), 0 8rpx 28rpx rgba(30, 111, 224, 0.05);
+	box-sizing: border-box;
+}
+
+.intro-label {
+	display: block;
+	margin-bottom: 18rpx;
+	font-size: 30rpx;
+	font-weight: 800;
+	line-height: 1.2;
+	color: #0F1F3A;
+}
+
+.intro-text {
+	display: block;
+	margin-top: 14rpx;
 	font-size: 27rpx;
 	line-height: 1.7;
 	color: #324563;
@@ -629,6 +725,46 @@ const go = (id) => {
 	box-sizing: border-box;
 }
 
+.service-card {
+	padding: 36rpx 32rpx;
+	border-radius: 28rpx;
+	background: linear-gradient(135deg, #123B6D 0%, #1E6FE0 58%, #64B5D4 100%);
+	box-shadow: 0 18rpx 42rpx rgba(30, 111, 224, 0.22);
+	box-sizing: border-box;
+}
+
+.service-title {
+	display: block;
+	font-size: 30rpx;
+	font-weight: 800;
+	line-height: 1.3;
+	color: #FFFFFF;
+}
+
+.service-desc {
+	display: block;
+	margin-top: 16rpx;
+	font-size: 25rpx;
+	line-height: 1.7;
+	color: rgba(255, 255, 255, 0.86);
+}
+
+.service-tags {
+	margin-top: 26rpx;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 14rpx;
+}
+
+.service-tags text {
+	padding: 10rpx 18rpx;
+	border: 1rpx solid rgba(255, 255, 255, 0.34);
+	border-radius: 999rpx;
+	background: rgba(255, 255, 255, 0.13);
+	font-size: 22rpx;
+	color: #FFFFFF;
+}
+
 .business-visual {
 	position: relative;
 	width: 128rpx;
@@ -737,15 +873,6 @@ const go = (id) => {
 	color: #6B7C97;
 }
 
-.chevron {
-	width: 18rpx;
-	height: 18rpx;
-	border-top: 3rpx solid #C4D1E4;
-	border-right: 3rpx solid #C4D1E4;
-	transform: rotate(45deg);
-	flex-shrink: 0;
-}
-
 .follow-card {
 	margin-top: 44rpx;
 	padding: 44rpx 36rpx;
@@ -791,43 +918,32 @@ const go = (id) => {
 	color: #324563;
 }
 
-.follow-button {
+.contact-row {
 	width: 100%;
-	height: 92rpx;
 	margin-top: 32rpx;
+	display: flex;
+	gap: 18rpx;
+}
+
+.contact-pill {
+	flex: 1;
+	height: 86rpx;
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	gap: 16rpx;
 	border-radius: 999rpx;
 	background: linear-gradient(180deg, #2A6CD3 0%, #0A4FB8 100%);
-	box-shadow: 0 20rpx 48rpx -20rpx rgba(10, 79, 184, 0.55);
+	box-shadow: 0 18rpx 42rpx -18rpx rgba(10, 79, 184, 0.5);
 	color: #FFFFFF;
-	font-size: 29rpx;
-	font-weight: 600;
+	font-size: 28rpx;
+	font-weight: 700;
 }
 
-.icon-plus {
-	width: 36rpx;
-	height: 36rpx;
-	border: 4rpx solid #FFFFFF;
-	border-radius: 999rpx;
-}
-
-.icon-plus::before,
-.icon-plus::after {
-	content: "";
-	position: absolute;
-	left: 8rpx;
-	top: 14rpx;
-	width: 12rpx;
-	height: 4rpx;
-	border-radius: 4rpx;
+.contact-pill.ghost {
+	border: 1rpx solid rgba(30, 111, 224, 0.22);
 	background: #FFFFFF;
-}
-
-.icon-plus::after {
-	transform: rotate(90deg);
+	box-shadow: none;
+	color: #1E6FE0;
 }
 
 .float-actions {
@@ -881,113 +997,4 @@ const go = (id) => {
 	transform: rotate(45deg);
 }
 
-.bottom-tabbar {
-	position: fixed;
-	left: 0;
-	right: 0;
-	bottom: 0;
-	z-index: 40;
-	height: 128rpx;
-	padding: 16rpx 38rpx 36rpx;
-	display: flex;
-	align-items: flex-start;
-	justify-content: space-around;
-	border-top: 2rpx solid #E4ECF7;
-	background: #FFFFFF;
-	box-sizing: border-box;
-}
-
-.tab-item {
-	min-width: 112rpx;
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	gap: 4rpx;
-	color: #94A3B8;
-	font-size: 21rpx;
-	line-height: 1.2;
-}
-
-.tab-item.active {
-	color: #1E6FE0;
-	font-weight: 600;
-}
-
-.tab-icon {
-	width: 48rpx;
-	height: 48rpx;
-	color: currentColor;
-}
-
-.tab-icon::before,
-.tab-icon::after,
-.tab-icon view {
-	content: "";
-	position: absolute;
-	box-sizing: border-box;
-}
-
-.tab-home::before {
-	left: 8rpx;
-	top: 20rpx;
-	width: 32rpx;
-	height: 22rpx;
-	border: 4rpx solid currentColor;
-	border-top: none;
-	border-radius: 0 0 5rpx 5rpx;
-}
-
-.tab-home::after {
-	left: 7rpx;
-	top: 9rpx;
-	width: 34rpx;
-	height: 34rpx;
-	border-left: 4rpx solid currentColor;
-	border-top: 4rpx solid currentColor;
-	transform: rotate(45deg);
-}
-
-.tab-home view {
-	left: 19rpx;
-	top: 30rpx;
-	width: 10rpx;
-	height: 12rpx;
-	background: currentColor;
-}
-
-.tab-company::before {
-	left: 8rpx;
-	top: 7rpx;
-	width: 32rpx;
-	height: 36rpx;
-	border: 4rpx solid currentColor;
-	border-radius: 5rpx;
-}
-
-.tab-company::after {
-	left: 16rpx;
-	top: 16rpx;
-	width: 5rpx;
-	height: 5rpx;
-	background: currentColor;
-	box-shadow: 12rpx 0 0 currentColor, 0 12rpx 0 currentColor, 12rpx 12rpx 0 currentColor, 6rpx 24rpx 0 currentColor;
-}
-
-.tab-mine::before {
-	left: 15rpx;
-	top: 7rpx;
-	width: 18rpx;
-	height: 18rpx;
-	border: 4rpx solid currentColor;
-	border-radius: 999rpx;
-}
-
-.tab-mine::after {
-	left: 8rpx;
-	top: 30rpx;
-	width: 32rpx;
-	height: 16rpx;
-	border: 4rpx solid currentColor;
-	border-bottom: none;
-	border-radius: 24rpx 24rpx 0 0;
-}
+</style>

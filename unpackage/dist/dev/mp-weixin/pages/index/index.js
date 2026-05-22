@@ -3,12 +3,20 @@ const common_vendor = require("../../common/vendor.js");
 const common_assets = require("../../common/assets.js");
 const config_cicadaAssets = require("../../config/cicada-assets.js");
 const api_content = require("../../api/content.js");
+if (!Math) {
+  BottomTabbar();
+}
+const BottomTabbar = () => "../../components/BottomTabbar.js";
 const repairDraftKey = "repairDraft";
+const localOrderPatchKey = "repairOrderLocalPatches";
+const feedbackRecordKey = "feedbackRecords";
+const maxRepairImageSize = 10 * 1024 * 1024;
+const maxRepairVideoSize = 50 * 1024 * 1024;
 const _sfc_main = {
   __name: "index",
   setup(__props) {
     const bootStart = Date.now();
-    const logBoot = (stage) => common_vendor.index.__f__("log", "at pages/index/index.vue:1073", "[index-boot]", stage, Date.now() - bootStart);
+    const logBoot = (stage) => common_vendor.index.__f__("log", "at pages/index/index.vue:1353", "[index-boot]", stage, Date.now() - bootStart);
     const copied = common_vendor.ref("");
     const showQr = common_vendor.ref(false);
     const showOfficial = common_vendor.ref(false);
@@ -20,43 +28,74 @@ const _sfc_main = {
     const activeTab = common_vendor.ref("home");
     const activeModule = common_vendor.ref("");
     const previousModule = common_vendor.ref("");
-    const logged = common_vendor.ref(true);
+    const logged = common_vendor.ref(Boolean(common_vendor.index.getStorageSync("token")));
+    const currentUser = common_vendor.ref(common_vendor.index.getStorageSync("userInfo") || {});
     const diagProduct = common_vendor.ref("");
     const diagFault = common_vendor.ref("");
     const diagOpen = common_vendor.ref("");
     const activeTrackTab = common_vendor.ref("全部");
     const activeOrdersTab = common_vendor.ref("全部");
+    const trackSearchKeyword = common_vendor.ref("");
+    const activeInvoiceTab = common_vendor.ref("待开票");
+    const activeInvoiceOrderId = common_vendor.ref("");
     const trackDetailOrder = common_vendor.ref("");
     const orderDetailOrder = common_vendor.ref("");
     const packageQueryLoading = common_vendor.ref(false);
     const packageQuerySearched = common_vendor.ref(false);
+    const repairSubmitting = common_vendor.ref(false);
+    const invoiceSubmitting = common_vendor.ref(false);
+    const paymentProofUploading = common_vendor.ref(false);
     const feedbackType = common_vendor.ref("建议");
     const feedbackContactKind = common_vendor.ref("phone");
     const feedbackText = common_vendor.ref("");
+    const logisticsList = [
+      { value: "顺丰快递", label: "顺丰快递" },
+      { value: "申通快递", label: "申通快递" },
+      { value: "中通快递", label: "中通快递" },
+      { value: "德邦快递", label: "德邦快递" },
+      { value: "圆通快递", label: "圆通快递" },
+      { value: "韵达快递", label: "韵达快递" },
+      { value: "中国邮政", label: "中国邮政" },
+      { value: "京东快递", label: "京东快递" },
+      { value: "极兔快递", label: "极兔快递" },
+      { value: "菜鸟裹裹", label: "菜鸟裹裹" },
+      { value: "信丰快递", label: "信丰快递" },
+      { value: "其他", label: "其他" }
+    ];
+    const showLogisticsPicker = common_vendor.ref(false);
     const feedbackContactValue = common_vendor.ref("");
     const feedbackOrderId = common_vendor.ref("");
+    const feedbackRecords = common_vendor.ref([]);
     const packageQuery = common_vendor.ref({
       trackingNo: "",
       phoneLast4: ""
     });
     const packageQueryResult = common_vendor.ref(null);
+    const invoiceForm = common_vendor.ref({
+      invoiceType: "电子普通发票",
+      titleType: "company",
+      title: "",
+      taxNo: "",
+      email: "",
+      remark: ""
+    });
     const addressForm = common_vendor.ref({
       addressId: "",
-      name: "李医生",
-      phone: "138 0013 8000",
-      region: "广西壮族自治区 / 桂林市 / 象山区",
-      detail: "中山中路 88 号 桂林口腔门诊 4 楼",
-      unit: "桂林口腔门诊",
-      def: true
+      name: "",
+      phone: "",
+      region: "",
+      detail: "",
+      unit: "",
+      def: false
     });
     const defaultRepairForm = () => ({
       logisticsCompany: "顺丰速运",
       trackingNo: "",
       sendMethod: "顺丰取件",
-      receiverName: "李医生",
-      receiverPhone: "13800138000",
-      receiverAddress: "广西壮族自治区桂林市象山区中山中路 88 号 桂林口腔门诊 4 楼",
-      receiverUnit: "桂林口腔门诊"
+      receiverName: "",
+      receiverPhone: "",
+      receiverAddress: "",
+      receiverUnit: ""
     });
     const defaultRepairProduct = () => ({
       id: 1,
@@ -70,8 +109,9 @@ const _sfc_main = {
       media: []
     });
     const repairForm = common_vendor.ref(defaultRepairForm());
-    const submittedOrderId = common_vendor.ref("DR-20260511-0042");
+    const submittedOrderId = common_vendor.ref("");
     const repairProducts = common_vendor.ref([defaultRepairProduct()]);
+    const orderLocalPatches = common_vendor.ref({});
     let repairProductSeed = 1;
     let repairMediaSeed = 1;
     logBoot("base refs ready");
@@ -98,27 +138,39 @@ const _sfc_main = {
       { label: "收件电话", value: "13929198537" },
       { label: "收件地址", value: "广东省佛山市南海区狮山镇罗村广东新光源核心基地B5座五楼" }
     ]);
-    const advantages = [
-      { icon: "lightning", title: "极速响应", desc: "2小时内接单回复、24小时内到场检修，将诊所停工损失降至最低。" },
-      { icon: "microscope", title: "精密检测", desc: "引进国际领先的工业级内窥镜与频率分析仪，精准识别隐匿故障。" }
+    const companyStats = [
+      { value: "20", label: "年品牌积累", desc: "品牌发展经验" },
+      { value: "27", label: "产品线", desc: "覆盖诊疗场景" },
+      { value: "195", label: "出口国家", desc: "服务全球市场" },
+      { value: "150", label: "专利成果", desc: "持续研发创新" }
     ];
-    const business = [
-      { title: "高低速手机维修", desc: "包含深度清理、动平衡校正、陶瓷轴承更换。", gradient: "linear-gradient(135deg, #2C5985 0%, #6BB0CC 100%)" },
-      { title: "综合治疗台保养", desc: "气路水路系统消毒、控制电路检修与压力调校。", gradient: "linear-gradient(135deg, #3D6F9E 0%, #6BB0CC 100%)" },
-      { title: "影像系统调试", desc: "CBCT、全景机辐射校验、感光板传感器优化。", gradient: "linear-gradient(135deg, #0A4FB8 0%, #6BB0CC 100%)" }
+    const companyIntro = [
+      "CICADA Dental（思科达 / 登煌医疗）是扎根佛山的口腔医疗设备研发制造品牌。",
+      "公司从光固化设备制造起步，逐步发展为覆盖根管治疗设备、牙科手机、电动微马达、牙齿美白仪及临床辅助器械的综合口腔解决方案提供商。",
+      "我们坚持以安全与质量为核心，通过研发、制造、售后和培训协同，为牙科专业人士提供稳定、高效、易用的设备支持。"
     ];
+    const companyAdvantages = [
+      { icon: "lightning", title: "研发制造", desc: "高标准研发中心，配套来自德国、日本、韩国等地的精密设备，支撑产品快速迭代。" },
+      { icon: "microscope", title: "质量合规", desc: "围绕医疗器械安全标准建立质量体系，产品满足国内外相关行业标准与注册要求。" }
+    ];
+    const companyProductLines = [
+      { title: "根管治疗设备", desc: "覆盖根管马达、根管测量、热牙胶充填、冲洗等临床根管治疗场景。", gradient: "linear-gradient(135deg, #2C5985 0%, #6BB0CC 100%)" },
+      { title: "牙科手机与电动微马达", desc: "提供高速手机、增速弯机、电动微马达等高效、低噪、稳定的动力设备。", gradient: "linear-gradient(135deg, #3D6F9E 0%, #6BB0CC 100%)" },
+      { title: "光固化与美白设备", desc: "以光固化灯为起点，延伸到牙齿美白仪及修复、美学相关设备。", gradient: "linear-gradient(135deg, #0A4FB8 0%, #6BB0CC 100%)" },
+      { title: "洁牙抛光与辅助器械", desc: "覆盖喷砂抛光、临床器械及耗材配套，满足诊所日常诊疗效率需求。", gradient: "linear-gradient(135deg, #1D8A96 0%, #7BC9C7 100%)" }
+    ];
+    const companyServiceTags = ["及时售后", "临床培训", "全球服务网络"];
     const defaultStatusItems = [
-      { id: "all", title: "全部", count: 3, color: "#1E6FE0", bg: "rgba(30, 111, 224, 0.09)", icon: "invoice", type: 0 },
-      { id: "pending", title: "待处理", count: 1, color: "#F59E0B", bg: "rgba(245, 158, 11, 0.09)", icon: "track", type: 1 },
-      { id: "fixing", title: "维修中", count: 1, color: "#0EA5E9", bg: "rgba(14, 165, 233, 0.09)", icon: "repair", type: 2 },
-      { id: "shipped", title: "已发货", count: 1, color: "#10B981", bg: "rgba(16, 185, 129, 0.09)", icon: "truck", type: 3 },
-      { id: "not_invoiced", title: "未开票", count: 0, color: "#F59E0B", bg: "rgba(245, 158, 11, 0.09)", icon: "invoice", type: 4 },
-      { id: "invoiced", title: "已开票", count: 0, color: "#10B981", bg: "rgba(16, 185, 129, 0.09)", icon: "check", type: 5 }
+      { id: "all", title: "全部", count: 0, color: "#1E6FE0", bg: "rgba(30, 111, 224, 0.09)", icon: "invoice", type: 0 },
+      { id: "pending", title: "待处理", count: 0, color: "#F59E0B", bg: "rgba(245, 158, 11, 0.09)", icon: "track", type: "pending" },
+      { id: "fixing", title: "维修中", count: 0, color: "#0EA5E9", bg: "rgba(14, 165, 233, 0.09)", icon: "repair", type: "维修中" },
+      { id: "shipped", title: "已发货", count: 0, color: "#10B981", bg: "rgba(16, 185, 129, 0.09)", icon: "truck", type: "已发货" }
     ];
     const menus = [
-      { icon: "pin", title: "收货地址管理", desc: "表单形式 · 1 个默认地址", go: "address" },
+      { icon: "pin", title: "收货地址管理", desc: "多地址 · 默认回寄地址", go: "address" },
       { icon: "edit", title: "投诉和建议", desc: "问题反馈 / 改进建议", go: "feedback" },
-      { icon: "box", title: "我的产品", desc: "已登记 3 件设备", go: "products" },
+      { icon: "box", title: "我的产品", desc: "登录后查看已登记设备", go: "products" },
+      { icon: "invoice", title: "发票与开票", desc: "申请开票 / 下载电子发票", go: "invoices" },
       { icon: "shield", title: "保修政策", desc: "三重保修条款", go: "warranty" },
       { icon: "phone", title: "联系我们", desc: "在线客服 / 服务热线 / 地址", go: "contact" }
     ];
@@ -135,9 +187,9 @@ const _sfc_main = {
     const moduleMap = {
       repair: { title: "立即报修", subtitle: "填写寄出信息、产品信息与寄回信息" },
       "repair-success": { title: "提交成功", subtitle: "工程师已收到您的报修申请" },
-      track: { title: "维修进度", subtitle: "支持全部、待处理、维修中和已发货状态查询" },
+      track: { title: "维修进度", subtitle: "按标准售后节点查看维修闭环进度" },
       "package-query": { title: "包裹查询", subtitle: "按快递单号查询是否签收和当前处理状态" },
-      "order-detail": { title: "工单详情", subtitle: "维修时间线、发票进度与负责工程师" },
+      "order-detail": { title: "工单详情", subtitle: "维修时间线与发票进度" },
       survey: { title: "调研有礼", subtitle: "扫码参与调研，领取专属维保福利" },
       diag: { title: "故障自查", subtitle: "选择产品类型和故障类型，查看排查建议" },
       warranty: { title: "保修政策", subtitle: "文字形式展示保修范围、期限和注意事项" },
@@ -146,6 +198,7 @@ const _sfc_main = {
       "guide-repair": { title: "报修指南", subtitle: "了解寄修报修的完整流程" },
       "guide-query": { title: "查询指南", subtitle: "查看进度查询和结果确认办法" },
       "guide-invoice": { title: "开票指南", subtitle: "了解发票申请、抬头和寄送说明" },
+      invoices: { title: "发票与开票", subtitle: "申请开票、查看进度与复制电子发票" },
       contact: { title: "联系我们", subtitle: "客服热线、工作时间和寄修地址" },
       orders: { title: "维修订单", subtitle: "查看全部维修记录与处理状态" },
       products: { title: "我的产品", subtitle: "已登记设备与保修状态" },
@@ -157,63 +210,25 @@ const _sfc_main = {
     const moduleHeadStyle = common_vendor.computed(() => ({
       paddingTop: `${moduleHeadPaddingTop.value}rpx`
     }));
-    const progressTabs = ["全部", "待处理", "维修中", "已发货"];
-    const repairFlow = ["寄出", "签收", "检测", "维修", "回寄", "完成"];
+    const showBottomTabbar = common_vendor.computed(() => pageBootReady.value && activeModule.value !== "survey" && activeModule.value !== "repair");
+    const repairStatusFlow = ["已提交", "已寄出", "已签收", "检测中", "待报价", "待确认", "维修中", "已发货", "已完成", "已评价"];
+    const pendingRepairStatuses = ["已提交", "已寄出", "已签收", "检测中", "待报价", "待确认"];
+    const progressTabs = ["全部", ...repairStatusFlow];
+    const repairFlow = ["提交", "寄出", "签收", "检测", "报价", "确认", "维修", "发货", "完成", "评价"];
     const packageFlow = ["待签收", "已签收", "已登记", "处理中", "已关联"];
-    const trackOrders = common_vendor.ref([
-      { id: "DR-20260508-1147", model: "NSK Ti-Max Z95L", status: "维修中", statusGroup: "维修中", tone: "warn", reached: 4, time: "05-09 14:23" },
-      { id: "DR-20260420-0883", model: "CICADA 超声洁牙机", status: "已完成", statusGroup: "已发货", tone: "ok", reached: 5, time: "04-25 09:11" },
-      { id: "DR-20260315-0521", model: "根管马达 X-Smart", status: "已完成", statusGroup: "已发货", tone: "ok", reached: 5, time: "03-20 16:48" }
-    ]);
-    const packageFallbackRecords = [
-      {
-        trackingNo: "SF0987654321",
-        phoneLast4: "8000",
-        company: "顺丰速运",
-        orderId: "DR-20260508-1147",
-        status: "已签收待检测",
-        tone: "warn",
-        reached: 3,
-        timeline: [
-          { title: "已签收", desc: "桂林服务中心已签收，等待工程师拆包登记。", time: "2026-05-08 16:20" },
-          { title: "运输中", desc: "快递员派送中，请保持寄件电话畅通。", time: "2026-05-08 10:14" },
-          { title: "客户寄出", desc: "客户通过顺丰寄出维修设备。", time: "2026-05-07 18:30" }
-        ]
-      },
-      {
-        trackingNo: "YT20260517001",
-        phoneLast4: "2317",
-        company: "圆通速递",
-        orderId: "",
-        status: "已签收待登记",
-        tone: "muted",
-        reached: 1,
-        timeline: [
-          { title: "已签收", desc: "仓库已签收，客服正在核对寄件信息。", time: "2026-05-17 11:08" },
-          { title: "到达网点", desc: "快件已到达桂林七星营业部。", time: "2026-05-17 08:46" }
-        ]
-      }
+    const invoiceFlow = [
+      { title: "待申请", desc: "选择已完成工单" },
+      { title: "审核中", desc: "客服核对抬头与金额" },
+      { title: "开票中", desc: "财务开具电子发票" },
+      { title: "已开票", desc: "复制链接查看发票" }
     ];
-    const orderTimeline = [
-      { title: "物流回寄", desc: "顺丰 SF1234567890 已签收", time: "2026-05-11 09:32", pending: true },
-      { title: "维修完成", desc: "已更换轴承组件，含密封圈与卡簧", time: "2026-05-10 16:48" },
-      { title: "维修中", desc: "工程师：王师傅 · 故障定位完成", time: "2026-05-09 14:23" },
-      { title: "检测完成", desc: "确认转动卡顿、轴承磨损", time: "2026-05-09 11:05" },
-      { title: "已签收", desc: "桂林服务中心 收", time: "2026-05-08 16:20" },
-      { title: "已寄出", desc: "顺丰快递 SF0987654321", time: "2026-05-08 10:14" }
+    const invoiceTitleTypes = [
+      { value: "company", label: "企业单位", desc: "适合诊所 / 医院" },
+      { value: "personal", label: "个人", desc: "无需填写税号" }
     ];
-    const orderList = common_vendor.ref([
-      { id: "DR-20260508-1147", model: "NSK Ti-Max Z95L", status: "维修中", statusGroup: "维修中", tone: "warn", price: "￥860", date: "2026-05-08" },
-      { id: "DR-20260420-0883", model: "CICADA 超声洁牙机", status: "已完成", statusGroup: "已发货", tone: "ok", price: "￥320", date: "2026-04-20" },
-      { id: "DR-20260315-0521", model: "根管马达 X-Smart", status: "已完成", statusGroup: "已发货", tone: "ok", price: "￥580", date: "2026-03-15" },
-      { id: "DR-20260218-0212", model: "综合治疗椅（主气路）", status: "已完成", statusGroup: "已发货", tone: "ok", price: "￥1,240", date: "2026-02-18" },
-      { id: "DR-20260112-0099", model: "光固化机 LED-X", status: "已取消", statusGroup: "待处理", tone: "muted", price: "—", date: "2026-01-12" }
-    ]);
-    const productList = [
-      { title: "NSK Ti-Max Z95L", sn: "TZ95L-2402-0891", date: "2024-02 购入", warranty: "保修中 · 还剩 91 天", expired: false },
-      { title: "CICADA 超声洁牙机", sn: "CSC-2306-7723", date: "2023-06 购入", warranty: "已过保 · 可付费维修", expired: true },
-      { title: "根管马达 X-Smart", sn: "XSM-2412-0103", date: "2024-12 购入", warranty: "保修中 · 还剩 561 天", expired: false }
-    ];
+    const trackOrders = common_vendor.ref([]);
+    const orderList = common_vendor.ref([]);
+    const productList = common_vendor.ref([]);
     const diagProducts = common_vendor.ref([
       { id: "hp", title: "高速手机/低速手机" },
       { id: "sc", title: "超声洁牙机" },
@@ -402,6 +417,28 @@ const _sfc_main = {
       { id: "email", title: "邮箱", label: "邮箱地址", placeholder: "请输入常用邮箱" }
     ];
     const feedbackTypes = ["建议", "投诉"];
+    const phoneRegex = /^1[3-9]\d{9}$/;
+    const trackingNoRegex = /^[A-Za-z0-9-]{6,32}$/;
+    const normalizePhone = (value = "") => String(value || "").replace(/\D/g, "");
+    const normalizeTrackingNo = (value = "") => String(value || "").replace(/\s/g, "").trim();
+    const isValidPhone = (value = "") => phoneRegex.test(normalizePhone(value));
+    const isValidTrackingNo = (value = "") => trackingNoRegex.test(normalizeTrackingNo(value));
+    const isFileTooLarge = (file = {}, limit = maxRepairImageSize) => Number(file.size || 0) > limit;
+    const formatFileSize = (size) => `${Math.round(size / 1024 / 1024)}MB`;
+    const formatMoney = (value) => {
+      if (value === void 0 || value === null || value === "")
+        return "待确认";
+      const numberValue = Number(String(value ?? "").replace(/[^\d.-]/g, ""));
+      if (!Number.isFinite(numberValue))
+        return "待确认";
+      return `¥${numberValue.toFixed(2)}`;
+    };
+    const todayText = () => {
+      const date = /* @__PURE__ */ new Date();
+      const pad = (num) => String(num).padStart(2, "0");
+      return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+    };
+    const feedbackTicketNo = () => `FB-${todayText().replace(/-/g, "")}-${String(Date.now()).slice(-4)}`;
     const toTextLines = (value) => {
       if (Array.isArray(value))
         return value.filter(Boolean).map(String);
@@ -445,6 +482,24 @@ const _sfc_main = {
         };
       });
     };
+    const selectLogistics = (item) => {
+      repairForm.value.logisticsCompany = item.value;
+      showLogisticsPicker.value = false;
+    };
+    const scanTrackingNo = () => {
+      common_vendor.index.scanCode({
+        onlyFromCamera: false,
+        scanType: ["qrCode", "barCode"],
+        success: (res) => {
+          if (res.result) {
+            repairForm.value.trackingNo = res.result;
+          }
+        },
+        fail: (err) => {
+          common_vendor.index.__f__("log", "at pages/index/index.vue:1899", "扫码失败:", err);
+        }
+      });
+    };
     const normalizeQrUrl = (url) => url || config_cicadaAssets.cicadaAssets.qrWechat;
     const applyContact = (data = {}) => {
       const next = normalizeContact(data);
@@ -460,11 +515,51 @@ const _sfc_main = {
         { label: "收件地址", value: next.address }
       ];
     };
-    const statusMeta = {
-      0: { status: "待处理", statusGroup: "待处理", tone: "muted", reached: 1 },
-      1: { status: "维修中", statusGroup: "维修中", tone: "warn", reached: 3 },
-      2: { status: "已发货", statusGroup: "已发货", tone: "ok", reached: 4 },
-      3: { status: "已完成", statusGroup: "已发货", tone: "ok", reached: 5 }
+    const repairStatusAliases = {
+      0: "已提交",
+      1: "维修中",
+      2: "已发货",
+      3: "已完成",
+      submitted: "已提交",
+      created: "已提交",
+      pending: "已提交",
+      sent: "已寄出",
+      mailed: "已寄出",
+      received: "已签收",
+      signed: "已签收",
+      checking: "检测中",
+      inspecting: "检测中",
+      quoted: "待报价",
+      quote_pending: "待报价",
+      waiting_quote: "待报价",
+      confirming: "待确认",
+      waiting_confirm: "待确认",
+      fixing: "维修中",
+      repairing: "维修中",
+      shipped: "已发货",
+      completed: "已完成",
+      done: "已完成",
+      reviewed: "已评价",
+      rated: "已评价",
+      cancelled: "已取消",
+      canceled: "已取消"
+    };
+    const repairStatusMeta = repairStatusFlow.reduce((acc, label, index) => {
+      acc[label] = {
+        status: label,
+        statusGroup: label,
+        tone: index < 3 ? "muted" : index < 6 ? "warn" : "ok",
+        reached: index
+      };
+      return acc;
+    }, {
+      已取消: { status: "已取消", statusGroup: "已取消", tone: "muted", reached: 0 }
+    });
+    const normalizeRepairStatus = (value, fallback = "已提交") => {
+      const raw = value === void 0 || value === null ? "" : String(value).trim();
+      if (!raw)
+        return fallback;
+      return repairStatusAliases[raw] || repairStatusAliases[raw.toLowerCase()] || raw;
     };
     const packageStatusMeta = {
       0: { status: "暂未签收", tone: "muted", reached: 0 },
@@ -474,27 +569,126 @@ const _sfc_main = {
       4: { status: "已关联工单", tone: "ok", reached: 4 },
       5: { status: "已完成", tone: "ok", reached: 4 }
     };
+    const formatDateTime = (value = "", sliceStart = 0, sliceEnd = 16) => {
+      if (!value)
+        return "";
+      if (typeof value === "number") {
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime()))
+          return "";
+        const pad = (num) => String(num).padStart(2, "0");
+        return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`.slice(sliceStart, sliceEnd);
+      }
+      return String(value).slice(sliceStart, sliceEnd);
+    };
+    const formatOrderListPrice = (order = {}) => {
+      const rawValue = order.totalFee || order.amount || order.price;
+      if (rawValue === void 0 || rawValue === null || rawValue === "")
+        return "—";
+      const numberValue = Number(String(rawValue).replace(/[^\d.-]/g, ""));
+      if (!Number.isFinite(numberValue) || numberValue <= 0)
+        return "—";
+      return `¥${Number.isInteger(numberValue) ? numberValue : numberValue.toFixed(2)}`;
+    };
+    const getOrderStatusTone = (order = {}) => {
+      if (order.statusGroup === "维修中")
+        return "warn";
+      if (order.statusGroup === "已发货" || order.statusGroup === "已完成" || order.statusGroup === "已评价")
+        return "ok";
+      if (order.statusGroup === "已取消")
+        return "muted";
+      return order.tone || "info";
+    };
     const normalizeOrder = (item = {}) => {
-      const meta = statusMeta[item.status] || {
-        status: item.statusText || item.status || "待处理",
-        statusGroup: item.statusText || "待处理",
-        tone: "muted",
-        reached: 1
-      };
-      const statusText = item.statusText || meta.status;
-      const statusGroup = ["待处理", "维修中", "已发货"].includes(statusText) ? statusText : meta.statusGroup;
-      return {
-        id: item.orderId || item.id || "",
-        model: item.productModel || item.productName || item.model || "维修设备",
+      var _a, _b, _c, _d;
+      const statusText = normalizeRepairStatus(item.statusText || item.statusName || item.status);
+      const meta = repairStatusMeta[statusText] || {
         status: statusText,
-        statusGroup,
+        statusGroup: statusText,
+        tone: "muted",
+        reached: Math.max(0, repairStatusFlow.indexOf(statusText))
+      };
+      const orderId = item.orderNo || item.orderId || item.id || item._id || "";
+      const createTime = item.createTime || item.createdAt || item.date || "";
+      const updateTime = item.updateTime || item.updatedAt || createTime;
+      const localPatch = orderLocalPatches.value[orderId] || {};
+      const merged = { ...item, ...localPatch };
+      const quoteItems = normalizeQuoteItems({ ...merged, status: statusText, statusGroup: meta.statusGroup });
+      const partsFee = Number(merged.partsFee ?? merged.materialFee ?? ((_a = merged.quote) == null ? void 0 : _a.partsFee) ?? sumQuoteFee(quoteItems, "partsFee")) || 0;
+      const laborFee = Number(merged.laborFee ?? merged.workFee ?? ((_b = merged.quote) == null ? void 0 : _b.laborFee) ?? sumQuoteFee(quoteItems, "laborFee")) || 0;
+      const totalFee = Number(merged.totalFee ?? merged.amount ?? merged.price ?? ((_c = merged.quote) == null ? void 0 : _c.totalFee) ?? partsFee + laborFee) || 0;
+      return {
+        id: orderId,
+        model: merged.productModel || merged.productName || merged.model || merged.deviceName || "维修设备",
+        status: statusText,
+        statusGroup: meta.statusGroup,
         tone: meta.tone,
         reached: meta.reached,
-        time: (item.updateTime || item.createTime || "").slice(5, 16) || item.time || "",
-        price: item.price || "—",
-        date: (item.createTime || item.date || "").slice(0, 10)
+        time: formatDateTime(updateTime, 5, 16) || merged.time || "",
+        price: merged.price || merged.amount || merged.totalFee || (totalFee ? formatMoney(totalFee) : ""),
+        date: formatDateTime(createTime, 0, 10),
+        doneTime: merged.doneTime || merged.expectedDoneTime || "待后台同步",
+        invoiceStatus: merged.invoiceStatus,
+        invoiced: merged.invoiced,
+        invoiceTitle: merged.invoiceTitle,
+        invoiceNo: merged.invoiceNo,
+        invoiceDate: merged.invoiceDate,
+        invoiceUrl: merged.invoiceUrl,
+        quoteStatus: merged.quoteStatus || ((_d = merged.quote) == null ? void 0 : _d.status) || (quoteItems.length ? "issued" : "pending"),
+        authorizationStatus: merged.authorizationStatus || merged.authStatus || (localPatch.authorizationStatus || ""),
+        paymentStatus: merged.paymentStatus || (Array.isArray(merged.paymentProofs) && merged.paymentProofs.length ? "uploaded" : "pending"),
+        quoteItems,
+        partsFee,
+        laborFee,
+        totalFee,
+        paymentProofs: Array.isArray(merged.paymentProofs) ? merged.paymentProofs : [],
+        timeline: Array.isArray(merged.timeline) ? merged.timeline : []
       };
     };
+    const readStorage = (key, fallback) => {
+      try {
+        const value = common_vendor.index.getStorageSync(key);
+        return value || fallback;
+      } catch (error) {
+        common_vendor.index.__f__("warn", "at pages/index/index.vue:2056", "read storage fallback:", key, error);
+        return fallback;
+      }
+    };
+    const writeStorage = (key, value) => {
+      try {
+        common_vendor.index.setStorageSync(key, value);
+      } catch (error) {
+        common_vendor.index.__f__("warn", "at pages/index/index.vue:2065", "write storage fallback:", key, error);
+      }
+    };
+    const createDemoQuoteItems = (item = {}) => {
+      const isQuoteStage = ["待确认", "维修中", "已发货", "已完成", "已评价"].includes(item.statusGroup || item.status);
+      if (!isQuoteStage)
+        return [];
+      return [
+        { name: "故障检测与清洁", desc: "拆机检测、清洁消毒与基础调试", partsFee: 0, laborFee: 80 },
+        { name: "轴承/密封件更换", desc: "按检测结果更换磨损配件", partsFee: 180, laborFee: 120 }
+      ];
+    };
+    const normalizeQuoteItems = (item = {}) => {
+      var _a, _b;
+      const rawItems = item.quoteItems || item.repairItems || ((_a = item.quote) == null ? void 0 : _a.items) || ((_b = item.quotation) == null ? void 0 : _b.items);
+      const list = Array.isArray(rawItems) && rawItems.length ? rawItems : createDemoQuoteItems(item);
+      return list.map((row = {}) => ({
+        name: row.name || row.title || row.projectName || "维修项目",
+        desc: row.desc || row.description || row.remark || "",
+        partsFee: Number(row.partsFee ?? row.partFee ?? row.materialFee ?? row.partsAmount ?? 0) || 0,
+        laborFee: Number(row.laborFee ?? row.workFee ?? row.serviceFee ?? row.laborAmount ?? 0) || 0
+      }));
+    };
+    const sumQuoteFee = (items = [], key) => items.reduce((total, item) => total + (Number(item[key]) || 0), 0);
+    const normalizeProduct = (item = {}) => ({
+      title: item.title || item.name || item.productName || item.model || "已登记设备",
+      sn: item.sn || item.serial || item.productSerial || item.id || "",
+      date: item.buyDate || item.purchaseDate || item.date || "",
+      warranty: item.warrantyText || item.warranty || item.warrantyStatus || "保修信息待同步",
+      expired: Boolean(item.expired || item.isExpired)
+    });
     const normalizePackageTimeline = (timeline = []) => {
       if (!Array.isArray(timeline) || !timeline.length) {
         return [{ title: "等待录入", desc: "后台录入快递单号后，这里会显示签收和处理记录。", time: "", pending: true }];
@@ -524,15 +718,6 @@ const _sfc_main = {
         timeline: normalizePackageTimeline(data.timeline || data.logs || data.records)
       };
     };
-    const findLocalPackageRecord = (trackingNo, phoneLast4 = "") => {
-      const normalizedNo = String(trackingNo).trim().toUpperCase();
-      const normalizedPhone = String(phoneLast4).trim();
-      return packageFallbackRecords.find((item) => {
-        const noMatched = item.trackingNo.toUpperCase() === normalizedNo;
-        const phoneMatched = !normalizedPhone || !item.phoneLast4 || item.phoneLast4 === normalizedPhone;
-        return noMatched && phoneMatched;
-      });
-    };
     const queryPackage = async () => {
       if (packageQueryLoading.value)
         return;
@@ -552,17 +737,43 @@ const _sfc_main = {
         packageQueryResult.value = res ? normalizePackageResult(res) : null;
         packageQuerySearched.value = true;
       } catch (error) {
-        common_vendor.index.__f__("warn", "at pages/index/index.vue:1685", "package query fallback:", error);
-        const localRecord = findLocalPackageRecord(trackingNo, packageQuery.value.phoneLast4);
-        if (localRecord) {
-          packageQueryResult.value = normalizePackageResult(localRecord);
-        } else {
-          packageQuerySearched.value = true;
-          common_vendor.index.showToast({ title: "包裹查询接口未开放", icon: "none" });
-        }
+        common_vendor.index.__f__("warn", "at pages/index/index.vue:2154", "package query failed:", error);
+        packageQuerySearched.value = true;
+        common_vendor.index.showToast({ title: error.message || "暂未查到包裹记录", icon: "none" });
       } finally {
         packageQueryLoading.value = false;
       }
+    };
+    const scanPackageCode = () => {
+      common_vendor.index.scanCode({
+        scanType: ["qrCode", "barCode"],
+        success: (res) => {
+          if (res.result) {
+            packageQuery.value.trackingNo = res.result.trim();
+            common_vendor.index.showToast({ title: "已识别单号", icon: "success" });
+          }
+        },
+        fail: (err) => {
+          common_vendor.index.__f__("warn", "at pages/index/index.vue:2172", "scan failed:", err);
+          common_vendor.index.showToast({ title: "扫码失败", icon: "none" });
+        }
+      });
+    };
+    const pastePackageCode = () => {
+      common_vendor.index.getClipboardData({
+        success: (res) => {
+          if (res.data && res.data.trim()) {
+            packageQuery.value.trackingNo = res.data.trim();
+            common_vendor.index.showToast({ title: "已粘贴单号", icon: "success" });
+          } else {
+            common_vendor.index.showToast({ title: "剪贴板为空", icon: "none" });
+          }
+        },
+        fail: (err) => {
+          common_vendor.index.__f__("warn", "at pages/index/index.vue:2189", "get clipboard failed:", err);
+          common_vendor.index.showToast({ title: "获取剪贴板失败", icon: "none" });
+        }
+      });
     };
     const applyFaultTypes = (list = []) => {
       if (!Array.isArray(list) || !list.length)
@@ -596,7 +807,7 @@ const _sfc_main = {
       const counts = orderList.value.reduce(
         (acc, item) => {
           acc.all += 1;
-          if (item.statusGroup === "待处理")
+          if (pendingRepairStatuses.includes(item.statusGroup))
             acc.pending += 1;
           if (item.statusGroup === "维修中")
             acc.fixing += 1;
@@ -611,13 +822,21 @@ const _sfc_main = {
         count: counts[item.id] !== void 0 && counts[item.id] !== null ? counts[item.id] : item.count
       }));
     });
+    const countOrdersByStatus = (status) => orderList.value.filter((item) => item.statusGroup === status).length;
     const orderTabs = common_vendor.computed(() => [
-      `全部 ${orderList.value.length}`,
-      `待处理 ${orderList.value.filter((item) => item.statusGroup === "待处理").length}`,
-      `维修中 ${orderList.value.filter((item) => item.statusGroup === "维修中").length}`,
-      `已发货 ${orderList.value.filter((item) => item.statusGroup === "已发货").length}`,
-      `未开票 ${orderList.value.filter((item) => !item.invoiced).length}`,
-      `已开票 ${orderList.value.filter((item) => item.invoiced).length}`
+      { key: "全部", label: "全部", count: orderList.value.length },
+      { key: "待处理", label: "待处理", count: orderList.value.filter((item) => pendingRepairStatuses.includes(item.statusGroup)).length },
+      { key: "维修中", label: "维修中", count: countOrdersByStatus("维修中") },
+      { key: "已发货", label: "已发货", count: countOrdersByStatus("已发货") },
+      { key: "未开票", label: "未开票", count: orderList.value.filter((item) => invoiceTodoStatusKeys.includes(getInvoiceStatusKey(item))).length },
+      { key: "已开票", label: "已开票", count: orderList.value.filter((item) => getInvoiceStatusKey(item) === "issued").length }
+    ]);
+    const invoiceTodoStatusKeys = ["available", "processing", "reviewing", "approved", "issuing"];
+    const invoiceTodoOrders = common_vendor.computed(() => orderList.value.filter((item) => invoiceTodoStatusKeys.includes(getInvoiceStatusKey(item))));
+    const invoiceIssuedOrders = common_vendor.computed(() => orderList.value.filter((item) => getInvoiceStatusKey(item) === "issued"));
+    const invoiceTabs = common_vendor.computed(() => [
+      `待开票 ${invoiceTodoOrders.value.length}`,
+      `已开票 ${invoiceIssuedOrders.value.length}`
     ]);
     const diagProductLabel = common_vendor.computed(() => {
       const product = diagProducts.value.find((item) => item.id === diagProduct.value);
@@ -664,31 +883,58 @@ const _sfc_main = {
     const warrantyDoc = common_vendor.computed(() => docMap.value.warranty || {});
     const activeDoc = common_vendor.computed(() => docMap.value[activeModule.value] || docFallbacks[activeModule.value] || docFallbacks["guide-quick"] || {});
     const isDocModule = common_vendor.computed(() => docModuleIds.includes(activeModule.value));
+    const userDisplayName = common_vendor.computed(() => currentUser.value.nickname || currentUser.value.name || (currentUser.value.phone ? `用户${String(currentUser.value.phone).slice(-4)}` : "已登录用户"));
+    const userDisplayUnit = common_vendor.computed(() => currentUser.value.unit || currentUser.value.companyName || "已绑定手机号");
+    const userAvatarText = common_vendor.computed(() => String(userDisplayName.value || "用").slice(0, 1));
     const feedbackContact = common_vendor.computed(() => feedbackContacts.find((item) => item.id === feedbackContactKind.value) || feedbackContacts[0]);
     const receiverLastIndex = common_vendor.computed(() => receiver.value.length - 1);
     const filteredTrackOrders = common_vendor.computed(() => {
-      if (activeTrackTab.value === "全部")
-        return trackOrders.value;
-      return trackOrders.value.filter((item) => item.statusGroup === activeTrackTab.value);
+      const keyword = trackSearchKeyword.value.trim().toLowerCase();
+      return trackOrders.value.filter((item) => {
+        const statusMatched = activeTrackTab.value === "全部" || item.statusGroup === activeTrackTab.value;
+        if (!statusMatched)
+          return false;
+        if (!keyword)
+          return true;
+        const searchable = [item.id, item.model, item.serial, item.productSerial, item.trackingNo].filter(Boolean).join(" ").toLowerCase();
+        return searchable.includes(keyword);
+      });
     });
     const filteredOrderList = common_vendor.computed(() => {
-      if (activeOrdersTab.value.includes("待处理"))
-        return orderList.value.filter((item) => item.statusGroup === "待处理");
-      if (activeOrdersTab.value.includes("维修中"))
-        return orderList.value.filter((item) => item.statusGroup === "维修中");
-      if (activeOrdersTab.value.includes("已发货"))
-        return orderList.value.filter((item) => item.statusGroup === "已发货");
-      if (activeOrdersTab.value.includes("未开票"))
-        return orderList.value.filter((item) => !item.invoiced);
-      if (activeOrdersTab.value.includes("已开票"))
-        return orderList.value.filter((item) => item.invoiced);
+      if (activeOrdersTab.value === "待处理")
+        return orderList.value.filter((item) => pendingRepairStatuses.includes(item.statusGroup));
+      if (activeOrdersTab.value === "未开票")
+        return orderList.value.filter((item) => invoiceTodoStatusKeys.includes(getInvoiceStatusKey(item)));
+      if (activeOrdersTab.value === "已开票")
+        return orderList.value.filter((item) => getInvoiceStatusKey(item) === "issued");
+      const matchedStatus = repairStatusFlow.find((status) => activeOrdersTab.value === status);
+      if (matchedStatus)
+        return orderList.value.filter((item) => item.statusGroup === matchedStatus);
       return orderList.value;
     });
     const detailOrder = common_vendor.computed(() => {
-      const fallbackOrder = trackOrders.value[0] || orderList.value[0] || {};
-      const sourceId = trackDetailOrder.value || orderDetailOrder.value || fallbackOrder.id;
-      return trackOrders.value.find((item) => item.id === sourceId) || orderList.value.find((item) => item.id === sourceId) || fallbackOrder;
+      const sourceId = trackDetailOrder.value || orderDetailOrder.value;
+      return trackOrders.value.find((item) => item.id === sourceId) || orderList.value.find((item) => item.id === sourceId) || {};
     });
+    const detailTimeline = common_vendor.computed(() => {
+      const timeline = detailOrder.value.timeline;
+      if (Array.isArray(timeline) && timeline.length)
+        return normalizePackageTimeline(timeline);
+      if (!detailOrder.value.id)
+        return [];
+      return [
+        {
+          title: detailOrder.value.status || "已提交",
+          desc: "工单进度已同步，更多节点会在后台更新后展示。",
+          time: detailOrder.value.time || detailOrder.value.date || "",
+          pending: false
+        }
+      ];
+    });
+    const detailInvoiceOrder = common_vendor.computed(() => resolveOrderRecord(detailOrder.value));
+    const activeInvoiceOrder = common_vendor.computed(() => orderList.value.find((item) => item.id === activeInvoiceOrderId.value) || {});
+    const detailQuoteItems = common_vendor.computed(() => Array.isArray(detailOrder.value.quoteItems) ? detailOrder.value.quoteItems : []);
+    const detailPaymentProofs = common_vendor.computed(() => Array.isArray(detailOrder.value.paymentProofs) ? detailOrder.value.paymentProofs : []);
     logBoot("computed state ready");
     let copyTimer = null;
     const initModuleSafeArea = () => {
@@ -703,7 +949,7 @@ const _sfc_main = {
         }
         moduleHeadPaddingTop.value = Math.ceil(((systemInfo.statusBarHeight || 24) + 24) * pixelRatio);
       } catch (error) {
-        common_vendor.index.__f__("warn", "at pages/index/index.vue:1842", "safe area fallback:", error);
+        common_vendor.index.__f__("warn", "at pages/index/index.vue:2377", "safe area fallback:", error);
         moduleHeadPaddingTop.value = 88;
       }
     };
@@ -730,6 +976,306 @@ const _sfc_main = {
         fail: () => markCopied("all")
       });
     };
+    function resolveOrderRecord(order = {}) {
+      return orderList.value.find((item) => item.id === order.id) || order || {};
+    }
+    const patchOrderRecord = (orderId, patch = {}) => {
+      if (!orderId)
+        return;
+      const nextPatch = {
+        ...orderLocalPatches.value[orderId] || {},
+        ...patch
+      };
+      orderLocalPatches.value = {
+        ...orderLocalPatches.value,
+        [orderId]: nextPatch
+      };
+      writeStorage(localOrderPatchKey, orderLocalPatches.value);
+      const applyPatch = (list) => list.map((item) => item.id === orderId ? { ...item, ...nextPatch } : item);
+      orderList.value = applyPatch(orderList.value);
+      trackOrders.value = applyPatch(trackOrders.value);
+    };
+    const getQuoteTotal = (order = {}) => Number(order.totalFee || 0) || sumQuoteFee(order.quoteItems || [], "partsFee") + sumQuoteFee(order.quoteItems || [], "laborFee");
+    const getQuoteMeta = (order = {}) => {
+      if (!order.id)
+        return { label: "待同步", tone: "muted", desc: "请选择一个工单查看报价。" };
+      if (!Array.isArray(order.quoteItems) || !order.quoteItems.length)
+        return { label: "待检测", tone: "muted", desc: "工程师检测完成后会生成正式报价。" };
+      if (order.quoteStatus === "rejected")
+        return { label: "已拒绝", tone: "warn", desc: "客户暂未同意该维修报价。" };
+      if (order.authorizationStatus === "confirmed")
+        return { label: "已确认", tone: "ok", desc: "报价已确认，工程师可继续维修。" };
+      return { label: "待确认", tone: "warn", desc: "请确认维修项目、配件、工时和总价后再授权维修。" };
+    };
+    const getAuthorizationMeta = (order = {}) => {
+      if (!Array.isArray(order.quoteItems) || !order.quoteItems.length)
+        return { label: "待报价", tone: "muted", desc: "检测报价生成后才需要授权。" };
+      if (order.authorizationStatus === "confirmed")
+        return { label: "已授权", tone: "ok", desc: order.authorizationTime ? `客户已于 ${order.authorizationTime} 授权维修。` : "客户已授权维修。" };
+      return { label: "待授权", tone: "warn", desc: "客户确认报价后，后台再安排维修。" };
+    };
+    const getPaymentMeta = (order = {}) => {
+      const proofs = Array.isArray(order.paymentProofs) ? order.paymentProofs : [];
+      if (!getQuoteTotal(order))
+        return { label: "待报价", tone: "muted", desc: "报价金额确认后，可上传付款或对公转账凭证。" };
+      if (proofs.length || order.paymentStatus === "uploaded")
+        return { label: "待核销", tone: "warn", desc: "凭证已留痕，等待财务核对到账。" };
+      if (order.paymentStatus === "paid")
+        return { label: "已支付", tone: "ok", desc: "财务已确认到账。" };
+      return { label: "待上传", tone: "muted", desc: "如该维修需要收费，请上传支付截图或对公转账凭证。" };
+    };
+    const canConfirmRepair = (order = {}) => Array.isArray(order.quoteItems) && order.quoteItems.length && order.authorizationStatus !== "confirmed";
+    const canUploadPaymentProof = (order = {}) => Boolean(order.id && getQuoteTotal(order) > 0);
+    const confirmRepairAuthorization = (order = {}) => {
+      if (!canConfirmRepair(order))
+        return;
+      common_vendor.index.showModal({
+        title: "确认维修授权",
+        content: `确认报价总额 ${formatMoney(getQuoteTotal(order))}，并授权工程师继续维修？`,
+        confirmText: "确认授权",
+        cancelText: "再看看",
+        success: ({ confirm }) => {
+          if (!confirm)
+            return;
+          patchOrderRecord(order.id, {
+            authorizationStatus: "confirmed",
+            authorizationTime: todayText(),
+            quoteStatus: "confirmed"
+          });
+          common_vendor.index.showToast({ title: "已授权维修", icon: "success" });
+        }
+      });
+    };
+    const uploadPaymentProof = async (order = {}) => {
+      if (!canUploadPaymentProof(order) || paymentProofUploading.value)
+        return;
+      try {
+        const chooseRes = await common_vendor.index.chooseImage({
+          count: 1,
+          sizeType: ["compressed"],
+          sourceType: ["album", "camera"]
+        });
+        const path = chooseRes.tempFilePaths && chooseRes.tempFilePaths[0];
+        if (!path)
+          return;
+        const oversized = (chooseRes.tempFiles || []).find((file) => isFileTooLarge(file, maxRepairImageSize));
+        if (oversized) {
+          common_vendor.index.showToast({ title: `图片不能超过${formatFileSize(maxRepairImageSize)}`, icon: "none" });
+          return;
+        }
+        paymentProofUploading.value = true;
+        common_vendor.index.showLoading({ title: "上传中" });
+        let proofUrl = path;
+        try {
+          const uploadRes = await api_content.uploadImage(path);
+          proofUrl = normalizeUploadUrl(uploadRes, path);
+        } catch (error) {
+          common_vendor.index.__f__("warn", "at pages/index/index.vue:2498", "payment proof upload fallback:", error);
+        }
+        const nextProofs = [
+          ...Array.isArray(order.paymentProofs) ? order.paymentProofs : [],
+          { id: `pay-${Date.now()}`, path, url: proofUrl, time: todayText() }
+        ];
+        patchOrderRecord(order.id, {
+          paymentStatus: "uploaded",
+          paymentProofs: nextProofs
+        });
+        common_vendor.index.showToast({ title: "凭证已留痕", icon: "success" });
+      } catch (error) {
+        common_vendor.index.__f__("warn", "at pages/index/index.vue:2510", "choose payment proof failed:", error);
+        common_vendor.index.showToast({ title: "上传凭证失败", icon: "none" });
+      } finally {
+        paymentProofUploading.value = false;
+        common_vendor.index.hideLoading();
+      }
+    };
+    const previewPaymentProof = (index = 0) => {
+      const urls = detailPaymentProofs.value.map((item) => item.url || item.path).filter(Boolean);
+      if (!urls.length)
+        return;
+      common_vendor.index.previewImage({
+        current: urls[index] || urls[0],
+        urls
+      });
+    };
+    function getInvoiceStatusKey(order = {}) {
+      if (order.invoiceStatus)
+        return order.invoiceStatus;
+      if (order.invoiced)
+        return "issued";
+      if (order.status === "已取消")
+        return "disabled";
+      if (["已完成", "已评价"].includes(order.statusGroup) || ["已完成", "已评价"].includes(order.status))
+        return "available";
+      return "unavailable";
+    }
+    function getInvoiceMeta(order = {}) {
+      const status = getInvoiceStatusKey(order);
+      const metaMap = {
+        available: { label: "可申请", tone: "ok", stage: "待申请", desc: "维修已完成，可申请电子普通发票。" },
+        processing: { label: "审核中", tone: "warn", stage: "审核中", desc: "申请已提交，客服正在核对抬头、税号和维修金额。" },
+        reviewing: { label: "审核中", tone: "warn", stage: "审核中", desc: "申请已提交，客服正在核对抬头、税号和维修金额。" },
+        approved: { label: "开票中", tone: "info", stage: "开票中", desc: "开票资料已审核通过，等待财务开具电子发票。" },
+        issuing: { label: "开票中", tone: "info", stage: "开票中", desc: "财务正在开具电子发票，完成后会同步链接。" },
+        issued: { label: "已开票", tone: "ok", stage: "已开票", desc: "电子发票已开具，可复制链接查看。" },
+        unavailable: { label: "待完成", tone: "muted", stage: "不可申请", desc: "维修完成并结算后即可申请开票。" },
+        disabled: { label: "不可开票", tone: "muted", stage: "不可申请", desc: "该订单暂不支持开票。" }
+      };
+      return metaMap[status] || metaMap.unavailable;
+    }
+    const resetInvoiceForm = (order = {}) => {
+      invoiceForm.value = {
+        invoiceType: "电子普通发票",
+        titleType: "company",
+        title: order.invoiceTitle || addressForm.value.unit || "",
+        taxNo: order.taxNo || "",
+        email: order.invoiceEmail || "",
+        remark: ""
+      };
+    };
+    const startInvoiceApply = (order = {}) => {
+      const sourceOrder = resolveOrderRecord(order);
+      const status = getInvoiceStatusKey(sourceOrder);
+      if (status === "processing") {
+        common_vendor.index.showToast({ title: "发票正在开具中", icon: "none" });
+        return;
+      }
+      if (status !== "available") {
+        common_vendor.index.showToast({ title: getInvoiceMeta(sourceOrder).desc, icon: "none" });
+        return;
+      }
+      resetInvoiceForm(sourceOrder);
+      activeInvoiceOrderId.value = sourceOrder.id;
+    };
+    const cancelInvoiceApply = () => {
+      activeInvoiceOrderId.value = "";
+    };
+    const submitInvoiceApply = async () => {
+      if (invoiceSubmitting.value)
+        return;
+      const order = activeInvoiceOrder.value;
+      if (!order.id) {
+        common_vendor.index.showToast({ title: "请选择开票工单", icon: "none" });
+        return;
+      }
+      if (!invoiceForm.value.title.trim()) {
+        common_vendor.index.showToast({ title: "请填写发票抬头", icon: "none" });
+        return;
+      }
+      if (invoiceForm.value.titleType === "company" && !invoiceForm.value.taxNo.trim()) {
+        common_vendor.index.showToast({ title: "请填写税号", icon: "none" });
+        return;
+      }
+      if (!invoiceForm.value.email.trim()) {
+        common_vendor.index.showToast({ title: "请填写接收邮箱", icon: "none" });
+        return;
+      }
+      invoiceSubmitting.value = true;
+      try {
+        await api_content.applyInvoice({
+          orderId: order.id,
+          invoiceType: invoiceForm.value.invoiceType,
+          titleType: invoiceForm.value.titleType,
+          title: invoiceForm.value.title.trim(),
+          taxNo: invoiceForm.value.titleType === "company" ? invoiceForm.value.taxNo.trim() : "",
+          email: invoiceForm.value.email.trim(),
+          remark: invoiceForm.value.remark.trim()
+        });
+        patchOrderRecord(order.id, {
+          invoiceStatus: "processing",
+          invoiceType: invoiceForm.value.invoiceType,
+          invoiceTitle: invoiceForm.value.title.trim(),
+          taxNo: invoiceForm.value.titleType === "company" ? invoiceForm.value.taxNo.trim() : "",
+          invoiceEmail: invoiceForm.value.email.trim()
+        });
+        activeInvoiceOrderId.value = "";
+        activeInvoiceTab.value = "待开票";
+        common_vendor.index.showModal({
+          title: "提交成功",
+          content: "开票申请已提交，后续会在发票与开票中同步审核、开票和电子发票链接。",
+          showCancel: false,
+          confirmText: "知道了"
+        });
+      } catch (error) {
+        common_vendor.index.__f__("warn", "at pages/index/index.vue:2635", "submit invoice failed:", error);
+        patchOrderRecord(order.id, {
+          invoiceStatus: "processing",
+          invoiceType: invoiceForm.value.invoiceType,
+          invoiceTitle: invoiceForm.value.title.trim(),
+          taxNo: invoiceForm.value.titleType === "company" ? invoiceForm.value.taxNo.trim() : "",
+          invoiceEmail: invoiceForm.value.email.trim()
+        });
+        activeInvoiceOrderId.value = "";
+        activeInvoiceTab.value = "待开票";
+        common_vendor.index.showModal({
+          title: "已记录开票申请",
+          content: "当前开票接口暂未开放，前端已先保留申请记录；后台上线后可同步审核、开票状态和电子发票链接。",
+          showCancel: false,
+          confirmText: "知道了"
+        });
+      } finally {
+        invoiceSubmitting.value = false;
+      }
+    };
+    const copyInvoiceLink = (order = {}) => {
+      const sourceOrder = resolveOrderRecord(order);
+      const invoiceLink = sourceOrder.invoiceUrl;
+      if (!invoiceLink) {
+        common_vendor.index.showToast({ title: "暂无电子发票链接", icon: "none" });
+        return;
+      }
+      common_vendor.index.setClipboardData({
+        data: invoiceLink,
+        success: () => common_vendor.index.showToast({ title: "发票链接已复制", icon: "success" }),
+        fail: () => common_vendor.index.showToast({ title: "复制失败", icon: "none" })
+      });
+    };
+    const handleInvoiceAction = (order = {}) => {
+      const sourceOrder = resolveOrderRecord(order);
+      const status = getInvoiceStatusKey(sourceOrder);
+      if (status === "issued") {
+        copyInvoiceLink(sourceOrder);
+        return;
+      }
+      activeModule.value = "invoices";
+      activeInvoiceTab.value = "待开票";
+      if (status === "available")
+        startInvoiceApply(sourceOrder);
+    };
+    const restoreLocalBusinessState = () => {
+      orderLocalPatches.value = readStorage(localOrderPatchKey, {});
+      const records = readStorage(feedbackRecordKey, []);
+      feedbackRecords.value = Array.isArray(records) ? records : [];
+    };
+    const saveFeedbackRecords = () => {
+      writeStorage(feedbackRecordKey, feedbackRecords.value);
+    };
+    const getFeedbackMeta = (record = {}) => {
+      const metaMap = {
+        submitted: { label: "已提交", tone: "info" },
+        processing: { label: "处理中", tone: "warn" },
+        replied: { label: "已回复", tone: "ok" },
+        closed: { label: "已完成", tone: "ok" }
+      };
+      return metaMap[record.status] || metaMap.submitted;
+    };
+    const addLocalFeedbackRecord = (status = "submitted") => {
+      const ticketNo = feedbackTicketNo();
+      const record = {
+        ticketNo,
+        type: feedbackType.value,
+        content: feedbackText.value.trim(),
+        contactType: feedbackContactKind.value,
+        contact: feedbackContactValue.value.trim(),
+        orderId: feedbackOrderId.value.trim(),
+        status,
+        reply: "",
+        time: todayText()
+      };
+      feedbackRecords.value = [record, ...feedbackRecords.value].slice(0, 10);
+      saveFeedbackRecords();
+      return record;
+    };
     const previewSurveyPoster = () => {
       common_vendor.index.previewImage({
         current: surveyPosterUrl,
@@ -737,19 +1283,29 @@ const _sfc_main = {
       });
     };
     const openModule = (id, type) => {
+      if (id === "address") {
+        openAddressPage();
+        return;
+      }
       previousModule.value = activeModule.value;
       activeModule.value = id;
       showOfficial.value = false;
       showQr.value = false;
+      if (id === "invoices") {
+        activeInvoiceOrderId.value = "";
+        activeInvoiceTab.value = "待开票";
+      }
       if (id === "orders" && type !== void 0) {
         const typeMap = ["全部", "待处理", "维修中", "已发货", "未开票", "已开票"];
-        if (typeMap[type]) {
+        if (typeof type === "string") {
+          activeOrdersTab.value = type === "pending" ? "待处理" : type;
+        } else if (typeMap[type]) {
           activeOrdersTab.value = typeMap[type];
         }
       }
     };
     const closeModule = () => {
-      if (activeModule.value === "order-detail" && (previousModule.value === "track" || previousModule.value === "orders")) {
+      if (activeModule.value === "order-detail" && (previousModule.value === "track" || previousModule.value === "orders" || previousModule.value === "invoices")) {
         activeModule.value = previousModule.value;
         previousModule.value = "";
         return;
@@ -809,7 +1365,7 @@ const _sfc_main = {
         repairProducts.value = normalizeRepairProducts(draft.repairProducts);
         syncRepairSeeds();
       } catch (error) {
-        common_vendor.index.__f__("warn", "at pages/index/index.vue:1960", "restore repair draft fallback:", error);
+        common_vendor.index.__f__("warn", "at pages/index/index.vue:2823", "restore repair draft fallback:", error);
       }
     };
     const saveRepairDraft = () => {
@@ -822,7 +1378,7 @@ const _sfc_main = {
         showRepairTools.value = false;
         common_vendor.index.showToast({ title: "草稿已保存", icon: "success" });
       } catch (error) {
-        common_vendor.index.__f__("warn", "at pages/index/index.vue:1974", "save repair draft fallback:", error);
+        common_vendor.index.__f__("warn", "at pages/index/index.vue:2837", "save repair draft fallback:", error);
         common_vendor.index.showToast({ title: "保存失败，请稍后重试", icon: "none" });
       }
     };
@@ -867,6 +1423,11 @@ const _sfc_main = {
         const paths = chooseRes.tempFilePaths || [];
         if (!paths.length)
           return;
+        const oversized = (chooseRes.tempFiles || []).find((file) => isFileTooLarge(file, maxRepairImageSize));
+        if (oversized) {
+          common_vendor.index.showToast({ title: `图片不能超过${formatFileSize(maxRepairImageSize)}`, icon: "none" });
+          return;
+        }
         common_vendor.index.showLoading({ title: "上传中" });
         for (const path of paths) {
           if (product.media.length >= 3)
@@ -882,7 +1443,7 @@ const _sfc_main = {
         }
         common_vendor.index.showToast({ title: "上传成功", icon: "success" });
       } catch (error) {
-        common_vendor.index.__f__("warn", "at pages/index/index.vue:2036", "upload image fallback:", error);
+        common_vendor.index.__f__("warn", "at pages/index/index.vue:2904", "upload image fallback:", error);
         common_vendor.index.showToast({ title: "图片上传失败", icon: "none" });
       } finally {
         common_vendor.index.hideLoading();
@@ -900,6 +1461,10 @@ const _sfc_main = {
         });
         if (!chooseRes.tempFilePath)
           return;
+        if (isFileTooLarge(chooseRes, maxRepairVideoSize)) {
+          common_vendor.index.showToast({ title: `视频不能超过${formatFileSize(maxRepairVideoSize)}`, icon: "none" });
+          return;
+        }
         common_vendor.index.showLoading({ title: "上传中" });
         const uploadRes = await api_content.uploadVideo(chooseRes.tempFilePath);
         repairMediaSeed += 1;
@@ -913,7 +1478,7 @@ const _sfc_main = {
         });
         common_vendor.index.showToast({ title: "上传成功", icon: "success" });
       } catch (error) {
-        common_vendor.index.__f__("warn", "at pages/index/index.vue:2068", "upload video fallback:", error);
+        common_vendor.index.__f__("warn", "at pages/index/index.vue:2940", "upload video fallback:", error);
         common_vendor.index.showToast({ title: "视频上传失败", icon: "none" });
       } finally {
         common_vendor.index.hideLoading();
@@ -946,55 +1511,107 @@ const _sfc_main = {
     const buildRepairPayload = () => {
       const product = repairProducts.value[0] || {};
       const firstMedia = splitRepairMedia(product.media);
+      const trackingNo = normalizeTrackingNo(repairForm.value.trackingNo);
+      const receiverPhone = normalizePhone(repairForm.value.receiverPhone);
       return {
-        productName: product.name || product.model || "维修产品",
-        productModel: product.model,
-        productSerial: product.serial,
+        status: "submitted",
+        statusText: "已提交",
+        productName: (product.name || product.model || "维修产品").trim(),
+        productModel: String(product.model || "").trim(),
+        productSerial: String(product.serial || "").trim(),
         faultType: product.faultType || product.faultDesc || "待检测",
-        faultDesc: product.faultDesc,
+        faultDesc: String(product.faultDesc || "").trim(),
         images: firstMedia.images,
         videos: firstMedia.videos,
         logisticsCompany: repairForm.value.logisticsCompany,
-        trackingNo: repairForm.value.trackingNo,
+        trackingNo,
         sendMethod: repairForm.value.sendMethod,
-        senderName: repairForm.value.receiverName,
-        senderPhone: repairForm.value.receiverPhone,
-        senderAddress: repairForm.value.receiverAddress,
-        receiverName: repairForm.value.receiverName,
-        receiverPhone: repairForm.value.receiverPhone,
-        receiverAddress: repairForm.value.receiverAddress,
-        receiverUnit: repairForm.value.receiverUnit,
+        senderName: String(repairForm.value.receiverName || "").trim(),
+        senderPhone: receiverPhone,
+        senderAddress: String(repairForm.value.receiverAddress || "").trim(),
+        receiverName: String(repairForm.value.receiverName || "").trim(),
+        receiverPhone,
+        receiverAddress: String(repairForm.value.receiverAddress || "").trim(),
+        receiverUnit: String(repairForm.value.receiverUnit || "").trim(),
         products: repairProducts.value.map((item) => {
           const media = splitRepairMedia(item.media);
           const voucherUrls = (item.voucherList || []).map((v) => v.url || v.path).filter(Boolean);
           return {
-            productName: item.name || item.model || "维修产品",
-            productModel: item.model,
-            productSerial: item.serial,
+            productName: (item.name || item.model || "维修产品").trim(),
+            productModel: String(item.model || "").trim(),
+            productSerial: String(item.serial || "").trim(),
             buyDate: item.buyDate,
             voucher: item.voucher,
             voucherImages: voucherUrls,
-            faultDesc: item.faultDesc,
+            faultDesc: String(item.faultDesc || "").trim(),
             images: media.images,
             videos: media.videos
           };
         })
       };
     };
-    const submitRepair = async () => {
-      const hasInvalidProduct = repairProducts.value.some((item) => !item.model || !item.serial || !item.faultDesc);
-      if (hasInvalidProduct || !repairForm.value.logisticsCompany || !repairForm.value.trackingNo) {
-        common_vendor.index.showToast({ title: "请完善必填项信息", icon: "none" });
-        return;
+    const validateRepairForm = () => {
+      for (let index = 0; index < repairProducts.value.length; index += 1) {
+        const product = repairProducts.value[index] || {};
+        const label = `第 ${index + 1} 个产品`;
+        if (!String(product.serial || "").trim()) {
+          common_vendor.index.showToast({ title: `${label}请填写序列号`, icon: "none" });
+          return false;
+        }
+        if (!String(product.faultDesc || "").trim()) {
+          common_vendor.index.showToast({ title: `${label}请填写故障描述`, icon: "none" });
+          return false;
+        }
+        if (!Array.isArray(product.media) || !product.media.length) {
+          common_vendor.index.showToast({ title: `${label}请上传故障附件`, icon: "none" });
+          return false;
+        }
       }
+      if (!repairForm.value.logisticsCompany) {
+        common_vendor.index.showToast({ title: "请选择物流公司", icon: "none" });
+        return false;
+      }
+      if (!isValidTrackingNo(repairForm.value.trackingNo)) {
+        common_vendor.index.showToast({ title: "请输入正确运单号", icon: "none" });
+        return false;
+      }
+      if (!String(repairForm.value.receiverName || "").trim()) {
+        common_vendor.index.showToast({ title: "请填写收货人", icon: "none" });
+        return false;
+      }
+      if (!isValidPhone(repairForm.value.receiverPhone)) {
+        common_vendor.index.showToast({ title: "请输入正确手机号", icon: "none" });
+        return false;
+      }
+      if (!String(repairForm.value.receiverAddress || "").trim()) {
+        common_vendor.index.showToast({ title: "请填写详细地址", icon: "none" });
+        return false;
+      }
+      if (!String(repairForm.value.receiverUnit || "").trim()) {
+        common_vendor.index.showToast({ title: "请填写单位名称", icon: "none" });
+        return false;
+      }
+      repairForm.value.trackingNo = normalizeTrackingNo(repairForm.value.trackingNo);
+      repairForm.value.receiverPhone = normalizePhone(repairForm.value.receiverPhone);
+      return true;
+    };
+    const submitRepair = async () => {
+      if (repairSubmitting.value)
+        return;
+      if (!validateRepairForm())
+        return;
+      repairSubmitting.value = true;
       try {
         const res = await api_content.submitRepairOrder(buildRepairPayload());
-        submittedOrderId.value = res && res.orderId ? res.orderId : submittedOrderId.value;
+        submittedOrderId.value = res && (res.orderNo || res.orderId || res.id) ? res.orderNo || res.orderId || res.id : "";
+        common_vendor.index.removeStorageSync(repairDraftKey);
         openModule("repair-success");
         loadRemoteContent();
       } catch (error) {
-        common_vendor.index.__f__("warn", "at pages/index/index.vue:2153", "submit repair fallback:", error);
-        common_vendor.index.showToast({ title: "后台接口未开放，已保留表单信息", icon: "none" });
+        common_vendor.index.__f__("warn", "at pages/index/index.vue:3079", "submit repair failed:", error);
+        common_vendor.index.showToast({ title: error.message || "报修接口暂未开放，已保留草稿", icon: "none" });
+      } finally {
+        repairSubmitting.value = false;
       }
     };
     const openFaultSheet = () => {
@@ -1014,7 +1631,7 @@ const _sfc_main = {
         });
         diagResult.value = result || localRecord || null;
       } catch (error) {
-        common_vendor.index.__f__("warn", "at pages/index/index.vue:2177", "fault search fallback:", error);
+        common_vendor.index.__f__("warn", "at pages/index/index.vue:3105", "fault search fallback:", error);
       }
     };
     const selectDiagOption = (item) => {
@@ -1079,6 +1696,11 @@ const _sfc_main = {
         sizeType: ["compressed"],
         success: (chooseRes) => {
           const tempFilePaths = chooseRes.tempFilePaths || [];
+          const oversized = (chooseRes.tempFiles || []).find((file) => isFileTooLarge(file, maxRepairImageSize));
+          if (oversized) {
+            common_vendor.index.showToast({ title: `凭证图片不能超过${formatFileSize(maxRepairImageSize)}`, icon: "none" });
+            return;
+          }
           tempFilePaths.forEach((path) => {
             product.voucherList.push({
               id: `voucher-${Date.now()}-${Math.random()}`,
@@ -1090,7 +1712,7 @@ const _sfc_main = {
           common_vendor.index.showToast({ title: "上传成功", icon: "success" });
         },
         fail: (error) => {
-          common_vendor.index.__f__("warn", "at pages/index/index.vue:2260", "choose image cancelled:", error);
+          common_vendor.index.__f__("warn", "at pages/index/index.vue:3193", "choose image cancelled:", error);
         }
       });
     };
@@ -1107,11 +1729,16 @@ const _sfc_main = {
         common_vendor.index.showToast({ title: "请完善地址信息", icon: "none" });
         return;
       }
+      const phoneRegex2 = /^1[3-9]\d{9}$/;
+      if (!phoneRegex2.test(addressForm.value.phone.replace(/\s/g, ""))) {
+        common_vendor.index.showToast({ title: "请输入正确的手机号", icon: "none" });
+        return;
+      }
       const region = parseRegion(addressForm.value.region);
       const payload = {
         addressId: addressForm.value.addressId,
         name: addressForm.value.name,
-        phone: addressForm.value.phone,
+        phone: addressForm.value.phone.replace(/\s/g, ""),
         province: region.province,
         city: region.city,
         district: region.district,
@@ -1124,53 +1751,135 @@ const _sfc_main = {
           await api_content.updateAddress(payload);
         } else {
           const res = await api_content.addAddress(payload);
-          addressForm.value.addressId = res && res.addressId ? res.addressId : "";
+          if (res && res.addressId) {
+            addressForm.value.addressId = res.addressId;
+          }
         }
         common_vendor.index.showToast({ title: "地址已保存", icon: "success" });
+        setTimeout(() => {
+          closeModule();
+        }, 1500);
       } catch (error) {
-        common_vendor.index.__f__("warn", "at pages/index/index.vue:2302", "save address fallback:", error);
-        common_vendor.index.showToast({ title: "地址接口未开放", icon: "none" });
+        common_vendor.index.__f__("warn", "at pages/index/index.vue:3247", "save address fallback:", error);
+        common_vendor.index.showToast({
+          title: error.message || "保存地址失败，请重试",
+          icon: "none"
+        });
       }
     };
+    const selectRegion = () => {
+      common_vendor.index.showToast({
+        title: "地区选择功能开发中",
+        icon: "none"
+      });
+    };
+    const resetAddressForm = () => {
+      addressForm.value = {
+        addressId: "",
+        name: "",
+        phone: "",
+        region: "",
+        detail: "",
+        unit: "",
+        def: false
+      };
+    };
+    const handleDeleteAddress = async () => {
+      common_vendor.index.showModal({
+        title: "确认删除",
+        content: "删除后将无法恢复，确定要删除这个地址吗？",
+        confirmText: "删除",
+        confirmColor: "#EF4444",
+        success: async (res) => {
+          if (res.confirm) {
+            try {
+              await api_content.deleteAddress(addressForm.value.addressId);
+              resetAddressForm();
+              common_vendor.index.showToast({ title: "删除成功", icon: "success" });
+              setTimeout(() => {
+                closeModule();
+              }, 1500);
+            } catch (error) {
+              common_vendor.index.__f__("warn", "at pages/index/index.vue:3290", "delete address fallback:", error);
+              common_vendor.index.showToast({ title: "地址接口未开放", icon: "none" });
+            }
+          }
+        }
+      });
+    };
     const submitFeedback = async () => {
-      if (!feedbackText.value || !feedbackContactValue.value) {
+      if (!feedbackText.value.trim() || !feedbackContactValue.value.trim()) {
         common_vendor.index.showToast({ title: "请填写反馈内容和联系方式", icon: "none" });
         return;
       }
       try {
         await api_content.addComplaint({
           type: feedbackType.value === "投诉" ? 0 : 1,
-          content: feedbackText.value,
+          content: feedbackText.value.trim(),
           contactType: feedbackContactKind.value,
-          contact: feedbackContactValue.value,
-          orderId: feedbackOrderId.value
+          contact: feedbackContactValue.value.trim(),
+          orderId: feedbackOrderId.value.trim()
         });
-        common_vendor.index.showToast({ title: "已提交", icon: "success" });
+        const record = addLocalFeedbackRecord("submitted");
+        common_vendor.index.showModal({
+          title: "提交成功",
+          content: `反馈单号：${record.ticketNo}。客服回复和处理状态会在“我的反馈单”中展示。`,
+          showCancel: false,
+          confirmText: "知道了"
+        });
         feedbackText.value = "";
         feedbackContactValue.value = "";
         feedbackOrderId.value = "";
       } catch (error) {
-        common_vendor.index.__f__("warn", "at pages/index/index.vue:2326", "submit feedback fallback:", error);
-        common_vendor.index.showToast({ title: "投诉建议接口未开放", icon: "none" });
+        common_vendor.index.__f__("warn", "at pages/index/index.vue:3323", "submit feedback fallback:", error);
+        const record = addLocalFeedbackRecord("submitted");
+        common_vendor.index.showModal({
+          title: "已生成反馈单",
+          content: `反馈单号：${record.ticketNo}。当前投诉建议接口未开放，前端已先保留记录；后台上线后可同步客服回复与处理状态。`,
+          showCancel: false,
+          confirmText: "知道了"
+        });
+        feedbackText.value = "";
+        feedbackContactValue.value = "";
+        feedbackOrderId.value = "";
       }
     };
-    const loginSuccess = async () => {
+    const onGetPhoneNumberLogin = async (event) => {
+      if (event.detail.errMsg !== "getPhoneNumber:ok") {
+        if (event.detail.errMsg && event.detail.errMsg.includes("cancel"))
+          return;
+        common_vendor.index.showToast({ title: "授权失败，请重试", icon: "none" });
+        return;
+      }
+      if (!event.detail.code) {
+        common_vendor.index.showToast({ title: "获取手机号授权失败", icon: "none" });
+        return;
+      }
       try {
-        const loginRes = await common_vendor.index.login({ provider: "weixin" });
-        const res = await api_content.wechatLogin({ code: loginRes.code });
-        if (res && res.token)
-          common_vendor.index.setStorageSync("token", res.token);
+        const res = await api_content.wechatLogin({ code: event.detail.code });
+        if (!res || !res.token) {
+          common_vendor.index.showToast({ title: "登录响应缺少 token", icon: "none" });
+          return;
+        }
+        common_vendor.index.setStorageSync("token", res.token);
+        common_vendor.index.setStorageSync("userInfo", res.userInfo || {});
+        common_vendor.index.setStorageSync("isLoggedIn", true);
+        currentUser.value = res.userInfo || {};
         logged.value = true;
         activeModule.value = "";
         activeTab.value = "mine";
         common_vendor.index.showToast({ title: "登录成功", icon: "success" });
       } catch (error) {
-        common_vendor.index.__f__("warn", "at pages/index/index.vue:2341", "wechat login fallback:", error);
-        logged.value = true;
-        activeModule.value = "";
-        activeTab.value = "mine";
-        common_vendor.index.showToast({ title: "登录接口未开放，已进入体验模式", icon: "none" });
+        common_vendor.index.__f__("warn", "at pages/index/index.vue:3365", "wechat phone login failed:", error);
+        common_vendor.index.showToast({ title: error.message || "登录接口暂未开放", icon: "none" });
       }
+    };
+    const logoutLocal = () => {
+      common_vendor.index.removeStorageSync("token");
+      common_vendor.index.removeStorageSync("userInfo");
+      common_vendor.index.removeStorageSync("isLoggedIn");
+      currentUser.value = {};
+      logged.value = false;
     };
     const go = (id, type) => {
       if (tabRoutes[id]) {
@@ -1179,11 +1888,21 @@ const _sfc_main = {
         previousModule.value = "";
         return;
       }
+      if (id === "address") {
+        openAddressPage();
+        return;
+      }
       if (moduleMap[id]) {
         openModule(id, type);
         return;
       }
       common_vendor.index.showToast({ title: "功能已接入当前页面", icon: "none" });
+    };
+    const openAddressPage = () => {
+      common_vendor.index.navigateTo({
+        url: "/pages/address/index",
+        fail: () => common_vendor.index.showToast({ title: "收货地址页面暂不可用", icon: "none" })
+      });
     };
     const openCustomerService = () => {
       common_vendor.index.showToast({ title: "正在连接客服...", icon: "none" });
@@ -1194,7 +1913,18 @@ const _sfc_main = {
         success: () => {
         },
         fail: (error) => {
-          common_vendor.index.__f__("warn", "at pages/index/index.vue:2374", "make phone call failed:", error);
+          common_vendor.index.__f__("warn", "at pages/index/index.vue:3415", "make phone call failed:", error);
+          common_vendor.index.showToast({ title: "拨打电话失败", icon: "none" });
+        }
+      });
+    };
+    const callPhone = (phoneNumber) => {
+      common_vendor.index.makePhoneCall({
+        phoneNumber: phoneNumber.replace(/\s/g, ""),
+        success: () => {
+        },
+        fail: (error) => {
+          common_vendor.index.__f__("warn", "at pages/index/index.vue:3426", "make phone call failed:", error);
           common_vendor.index.showToast({ title: "拨打电话失败", icon: "none" });
         }
       });
@@ -1211,15 +1941,26 @@ const _sfc_main = {
       showOfficial.value = false;
       go("company");
     };
+    common_vendor.onLoad((options = {}) => {
+      const type = Number(options.type);
+      const routeType = Number.isInteger(type) ? type : void 0;
+      if (options.module && moduleMap[options.module]) {
+        openModule(options.module, routeType);
+        return;
+      }
+      if (routeType !== void 0) {
+        openModule("orders", routeType);
+      }
+    });
     const loadRemoteContent = async () => {
       const tasks = [
-        api_content.getWarrantyPolicy().then((doc) => updateDoc("warranty", doc)).catch((error) => common_vendor.index.__f__("warn", "at pages/index/index.vue:2402", "warranty fallback:", error)),
-        api_content.getFeePolicy().then((doc) => updateDoc("fees", doc)).catch((error) => common_vendor.index.__f__("warn", "at pages/index/index.vue:2405", "fee fallback:", error)),
-        api_content.getGuide("quick").then((doc) => updateDoc("guide-quick", doc)).catch((error) => common_vendor.index.__f__("warn", "at pages/index/index.vue:2408", "quick guide fallback:", error)),
-        api_content.getGuide("repair").then((doc) => updateDoc("guide-repair", doc)).catch((error) => common_vendor.index.__f__("warn", "at pages/index/index.vue:2411", "repair guide fallback:", error)),
-        api_content.getGuide("query").then((doc) => updateDoc("guide-query", doc)).catch((error) => common_vendor.index.__f__("warn", "at pages/index/index.vue:2414", "query guide fallback:", error)),
-        api_content.getGuide("invoice").then((doc) => updateDoc("guide-invoice", doc)).catch((error) => common_vendor.index.__f__("warn", "at pages/index/index.vue:2417", "invoice guide fallback:", error)),
-        api_content.getContact().then((data) => applyContact(data)).catch((error) => common_vendor.index.__f__("warn", "at pages/index/index.vue:2420", "contact fallback:", error)),
+        api_content.getWarrantyPolicy().then((doc) => updateDoc("warranty", doc)).catch((error) => common_vendor.index.__f__("warn", "at pages/index/index.vue:3468", "warranty fallback:", error)),
+        api_content.getFeePolicy().then((doc) => updateDoc("fees", doc)).catch((error) => common_vendor.index.__f__("warn", "at pages/index/index.vue:3471", "fee fallback:", error)),
+        api_content.getGuide("quick").then((doc) => updateDoc("guide-quick", doc)).catch((error) => common_vendor.index.__f__("warn", "at pages/index/index.vue:3474", "quick guide fallback:", error)),
+        api_content.getGuide("repair").then((doc) => updateDoc("guide-repair", doc)).catch((error) => common_vendor.index.__f__("warn", "at pages/index/index.vue:3477", "repair guide fallback:", error)),
+        api_content.getGuide("query").then((doc) => updateDoc("guide-query", doc)).catch((error) => common_vendor.index.__f__("warn", "at pages/index/index.vue:3480", "query guide fallback:", error)),
+        api_content.getGuide("invoice").then((doc) => updateDoc("guide-invoice", doc)).catch((error) => common_vendor.index.__f__("warn", "at pages/index/index.vue:3483", "invoice guide fallback:", error)),
+        api_content.getContact().then((data) => applyContact(data)).catch((error) => common_vendor.index.__f__("warn", "at pages/index/index.vue:3486", "contact fallback:", error)),
         api_content.getCustomerService().then((data = {}) => {
           customerService.value = {
             ...customerService.value,
@@ -1227,25 +1968,28 @@ const _sfc_main = {
             qrcodeUrl: normalizeQrUrl(data.qrcodeUrl),
             wechat: data.wechat || data.wechatId || customerService.value.wechat
           };
-        }).catch((error) => common_vendor.index.__f__("warn", "at pages/index/index.vue:2430", "customer service fallback:", error)),
+        }).catch((error) => common_vendor.index.__f__("warn", "at pages/index/index.vue:3496", "customer service fallback:", error)),
         api_content.getWechat().then((data = {}) => {
           wechatInfo.value = {
             ...wechatInfo.value,
             ...data,
             qrcodeUrl: normalizeQrUrl(data.qrcodeUrl)
           };
-        }).catch((error) => common_vendor.index.__f__("warn", "at pages/index/index.vue:2439", "wechat fallback:", error)),
-        api_content.getFaultTypes().then((list) => applyFaultTypes(list)).catch((error) => common_vendor.index.__f__("warn", "at pages/index/index.vue:2442", "fault types fallback:", error)),
+        }).catch((error) => common_vendor.index.__f__("warn", "at pages/index/index.vue:3505", "wechat fallback:", error)),
+        api_content.getFaultTypes().then((list) => applyFaultTypes(list)).catch((error) => common_vendor.index.__f__("warn", "at pages/index/index.vue:3508", "fault types fallback:", error)),
+        api_content.getProductList({ page: 1, size: 50 }).then((data = {}) => {
+          const list = Array.isArray(data) ? data : data.list;
+          productList.value = Array.isArray(list) ? list.map(normalizeProduct).filter((item) => item.sn || item.title) : [];
+        }).catch((error) => common_vendor.index.__f__("warn", "at pages/index/index.vue:3514", "product list failed:", error)),
         api_content.getRepairList({ page: 1, size: 30 }).then((data = {}) => {
           const list = Array.isArray(data) ? data : data.list;
-          if (!Array.isArray(list) || !list.length)
+          if (!Array.isArray(list))
             return;
+          orderLocalPatches.value = readStorage(localOrderPatchKey, orderLocalPatches.value || {});
           const normalized = list.map(normalizeOrder).filter((item) => item.id);
-          if (!normalized.length)
-            return;
           orderList.value = normalized;
           trackOrders.value = normalized;
-        }).catch((error) => common_vendor.index.__f__("warn", "at pages/index/index.vue:2452", "repair list fallback:", error))
+        }).catch((error) => common_vendor.index.__f__("warn", "at pages/index/index.vue:3524", "repair list failed:", error))
       ];
       await Promise.allSettled(tasks);
     };
@@ -1258,6 +2002,7 @@ const _sfc_main = {
       }, 80);
       setTimeout(() => {
         logBoot("deferred boot start");
+        restoreLocalBusinessState();
         restoreRepairDraft();
         loadRemoteContent();
       }, 220);
@@ -1268,13 +2013,13 @@ const _sfc_main = {
       }, activeModule.value ? common_vendor.e({
         b: activeModule.value !== "survey"
       }, activeModule.value !== "survey" ? {
-        c: common_vendor.o(closeModule, "b8"),
+        c: common_vendor.o(closeModule, "73"),
         d: common_vendor.t(moduleInfo.value.title),
         e: common_vendor.t(moduleInfo.value.subtitle),
         f: common_vendor.s(moduleHeadStyle.value)
       } : {}, {
         g: activeModule.value === "repair"
-      }, activeModule.value === "repair" ? {
+      }, activeModule.value === "repair" ? common_vendor.e({
         h: common_vendor.t(repairProducts.value.length),
         i: common_vendor.f(repairProducts.value, (product, index, i0) => {
           return common_vendor.e({
@@ -1285,22 +2030,20 @@ const _sfc_main = {
           } : {}, {
             d: product.name,
             e: common_vendor.o(($event) => product.name = $event.detail.value, product.id),
-            f: product.model,
-            g: common_vendor.o(($event) => product.model = $event.detail.value, product.id),
-            h: product.serial,
-            i: common_vendor.o(($event) => product.serial = $event.detail.value, product.id),
-            j: common_vendor.t(product.buyDate || "请选择日期"),
-            k: !product.buyDate ? 1 : "",
-            l: product.buyDate,
-            m: common_vendor.o((e) => onDateChange(index, e), product.id),
-            n: product.voucherList && product.voucherList.length
+            f: product.serial,
+            g: common_vendor.o(($event) => product.serial = $event.detail.value, product.id),
+            h: common_vendor.t(product.buyDate || "请选择日期"),
+            i: !product.buyDate ? 1 : "",
+            j: product.buyDate,
+            k: common_vendor.o((e) => onDateChange(index, e), product.id),
+            l: product.voucherList && product.voucherList.length
           }, product.voucherList && product.voucherList.length ? {
-            o: common_vendor.t(product.voucherList.length)
+            m: common_vendor.t(product.voucherList.length)
           } : {}, {
-            p: common_vendor.o(($event) => openVoucherPicker(index), product.id),
-            q: product.voucherList && product.voucherList.length
+            n: common_vendor.o(($event) => openVoucherPicker(index), product.id),
+            o: product.voucherList && product.voucherList.length
           }, product.voucherList && product.voucherList.length ? {
-            r: common_vendor.f(product.voucherList, (voucher, vIndex, i1) => {
+            p: common_vendor.f(product.voucherList, (voucher, vIndex, i1) => {
               return {
                 a: voucher.url || voucher.path,
                 b: common_vendor.o(($event) => removeVoucher(index, vIndex), voucher.id),
@@ -1309,10 +2052,10 @@ const _sfc_main = {
               };
             })
           } : {}, {
-            s: product.faultDesc,
-            t: common_vendor.o(($event) => product.faultDesc = $event.detail.value, product.id),
-            v: common_vendor.t(product.media.length),
-            w: common_vendor.f(product.media, (media, k1, i1) => {
+            q: product.faultDesc,
+            r: common_vendor.o(($event) => product.faultDesc = $event.detail.value, product.id),
+            s: common_vendor.t(product.media.length),
+            t: common_vendor.f(product.media, (media, k1, i1) => {
               return common_vendor.e({
                 a: media.type === "image"
               }, media.type === "image" ? {
@@ -1322,50 +2065,64 @@ const _sfc_main = {
                 d: media.id
               });
             }),
-            x: product.media.length < 3
+            v: product.media.length < 3
           }, product.media.length < 3 ? {
-            y: common_vendor.o(($event) => addRepairMedia(index), product.id)
+            w: common_vendor.o(($event) => addRepairMedia(index), product.id)
           } : {}, {
-            z: product.id
+            x: product.id
           });
         }),
         j: repairProducts.value.length > 1,
-        k: common_vendor.o(addRepairProduct, "1e"),
-        l: repairForm.value.logisticsCompany,
-        m: common_vendor.o(($event) => repairForm.value.logisticsCompany = $event.detail.value, "27"),
+        k: common_vendor.o(addRepairProduct, "a3"),
+        l: common_vendor.t(repairForm.value.logisticsCompany || "请选择物流公司"),
+        m: common_vendor.o(($event) => showLogisticsPicker.value = true, "7a"),
         n: repairForm.value.trackingNo,
-        o: common_vendor.o(($event) => repairForm.value.trackingNo = $event.detail.value, "11"),
-        p: repairForm.value.receiverName,
-        q: common_vendor.o(($event) => repairForm.value.receiverName = $event.detail.value, "4f"),
-        r: repairForm.value.receiverPhone,
-        s: common_vendor.o(($event) => repairForm.value.receiverPhone = $event.detail.value, "3a"),
-        t: repairForm.value.receiverAddress,
-        v: common_vendor.o(($event) => repairForm.value.receiverAddress = $event.detail.value, "1a"),
-        w: repairForm.value.receiverUnit,
-        x: common_vendor.o(($event) => repairForm.value.receiverUnit = $event.detail.value, "76"),
-        y: common_vendor.o(openCustomerService, "7a"),
-        z: common_vendor.o(makePhoneCall, "45"),
-        A: common_vendor.f(receiver.value, (item, k0, i0) => {
-          return {
+        o: common_vendor.o(($event) => repairForm.value.trackingNo = $event.detail.value, "06"),
+        p: common_vendor.o(scanTrackingNo, "d5"),
+        q: repairForm.value.receiverName,
+        r: common_vendor.o(($event) => repairForm.value.receiverName = $event.detail.value, "3f"),
+        s: repairForm.value.receiverPhone,
+        t: common_vendor.o(($event) => repairForm.value.receiverPhone = $event.detail.value, "ae"),
+        v: repairForm.value.receiverAddress,
+        w: common_vendor.o(($event) => repairForm.value.receiverAddress = $event.detail.value, "bd"),
+        x: repairForm.value.receiverUnit,
+        y: common_vendor.o(($event) => repairForm.value.receiverUnit = $event.detail.value, "5d"),
+        z: common_vendor.o(($event) => callPhone("13929945417"), "c5"),
+        A: common_vendor.o(($event) => callPhone("13929924257"), "29"),
+        B: common_vendor.o(($event) => callPhone("13927263445"), "ab"),
+        C: common_vendor.o(($event) => callPhone("13927700164"), "41"),
+        D: common_vendor.o(($event) => callPhone("+8613929924346"), "8b"),
+        E: common_vendor.o(($event) => showRepairTools.value = true, "a8"),
+        F: common_vendor.t(repairSubmitting.value ? "提交中..." : "立即提交报修"),
+        G: repairSubmitting.value ? 1 : "",
+        H: common_vendor.o(submitRepair, "9e"),
+        I: showLogisticsPicker.value
+      }, showLogisticsPicker.value ? {
+        J: common_vendor.o(($event) => showLogisticsPicker.value = false, "7e")
+      } : {}, {
+        K: showLogisticsPicker.value
+      }, showLogisticsPicker.value ? {
+        L: common_vendor.o(($event) => showLogisticsPicker.value = false, "98"),
+        M: common_vendor.f(logisticsList, (item, k0, i0) => {
+          return common_vendor.e({
             a: common_vendor.t(item.label),
-            b: common_vendor.t(item.value),
-            c: common_vendor.o(($event) => copyOne(item.value, item.label), item.label),
-            d: item.label
-          };
-        }),
-        B: common_vendor.t(copied.value === "all" ? "已复制" : "一键复制以上收件信息"),
-        C: common_vendor.o(copyAll, "db"),
-        D: common_vendor.o(openCustomerService, "01"),
-        E: common_vendor.o(makePhoneCall, "4e"),
-        F: common_vendor.o(($event) => showRepairTools.value = true, "0e"),
-        G: common_vendor.o(submitRepair, "f8")
-      } : activeModule.value === "repair-success" ? {
-        I: common_vendor.o(($event) => copyOne(submittedOrderId.value, "工单号"), "6e"),
-        J: common_vendor.t(submittedOrderId.value),
-        K: common_vendor.o(closeModule, "9d"),
-        L: common_vendor.o(($event) => go("track"), "01")
+            b: repairForm.value.logisticsCompany === item.value
+          }, repairForm.value.logisticsCompany === item.value ? {} : {}, {
+            c: item.value,
+            d: common_vendor.o(($event) => selectLogistics(item), item.value)
+          });
+        })
+      } : {}) : activeModule.value === "repair-success" ? {
+        O: common_vendor.o(($event) => copyOne(submittedOrderId.value, "工单号"), "75"),
+        P: common_vendor.t(submittedOrderId.value || "工单号待后台返回"),
+        Q: common_vendor.o(closeModule, "92"),
+        R: common_vendor.o(($event) => go("track"), "59")
       } : activeModule.value === "track" ? common_vendor.e({
-        N: common_vendor.f(progressTabs, (item, k0, i0) => {
+        T: trackSearchKeyword.value,
+        U: common_vendor.o(common_vendor.m(($event) => trackSearchKeyword.value = $event.detail.value, {
+          trim: true
+        }), "f8"),
+        V: common_vendor.f(progressTabs, (item, k0, i0) => {
           return {
             a: common_vendor.t(item),
             b: item,
@@ -1373,7 +2130,7 @@ const _sfc_main = {
             d: common_vendor.o(($event) => activeTrackTab.value = item, item)
           };
         }),
-        O: common_vendor.f(filteredTrackOrders.value, (order, k0, i0) => {
+        W: common_vendor.f(filteredTrackOrders.value, (order, k0, i0) => {
           return {
             a: common_vendor.t(order.id),
             b: common_vendor.t(order.model),
@@ -1391,32 +2148,34 @@ const _sfc_main = {
             h: common_vendor.o(($event) => openTrackDetail(order), order.id)
           };
         }),
-        P: !filteredTrackOrders.value.length
+        X: !filteredTrackOrders.value.length
       }, !filteredTrackOrders.value.length ? {} : {}) : activeModule.value === "package-query" ? common_vendor.e({
-        R: common_vendor.o(queryPackage, "2d"),
-        S: packageQuery.value.trackingNo,
-        T: common_vendor.o(($event) => packageQuery.value.trackingNo = $event.detail.value, "54"),
-        U: common_vendor.o(queryPackage, "c8"),
-        V: packageQuery.value.phoneLast4,
-        W: common_vendor.o(($event) => packageQuery.value.phoneLast4 = $event.detail.value, "f9"),
-        X: common_vendor.t(packageQueryLoading.value ? "查询中..." : "立即查询"),
-        Y: packageQueryLoading.value ? 1 : "",
-        Z: common_vendor.o(queryPackage, "17"),
-        aa: packageQueryResult.value
+        Z: common_vendor.o(queryPackage, "a9"),
+        aa: packageQuery.value.trackingNo,
+        ab: common_vendor.o(($event) => packageQuery.value.trackingNo = $event.detail.value, "86"),
+        ac: common_vendor.o(scanPackageCode, "5f"),
+        ad: common_vendor.o(pastePackageCode, "bb"),
+        ae: common_vendor.o(queryPackage, "00"),
+        af: packageQuery.value.phoneLast4,
+        ag: common_vendor.o(($event) => packageQuery.value.phoneLast4 = $event.detail.value, "68"),
+        ah: common_vendor.t(packageQueryLoading.value ? "查询中..." : "立即查询"),
+        ai: packageQueryLoading.value ? 1 : "",
+        aj: common_vendor.o(queryPackage, "4d"),
+        ak: packageQueryResult.value
       }, packageQueryResult.value ? {
-        ab: common_vendor.t(packageQueryResult.value.trackingNo),
-        ac: common_vendor.t(packageQueryResult.value.status),
-        ad: common_vendor.n("tag-" + packageQueryResult.value.tone),
-        ae: common_vendor.t(packageQueryResult.value.company || "待录入"),
-        af: common_vendor.t(packageQueryResult.value.orderId || "待关联"),
-        ag: common_vendor.f(packageFlow, (step, index, i0) => {
+        al: common_vendor.t(packageQueryResult.value.trackingNo),
+        am: common_vendor.t(packageQueryResult.value.status),
+        an: common_vendor.n("tag-" + packageQueryResult.value.tone),
+        ao: common_vendor.t(packageQueryResult.value.company || "待录入"),
+        ap: common_vendor.t(packageQueryResult.value.orderId || "待关联"),
+        aq: common_vendor.f(packageFlow, (step, index, i0) => {
           return {
             a: common_vendor.t(step),
             b: step,
             c: index <= packageQueryResult.value.reached ? 1 : ""
           };
         }),
-        ah: common_vendor.f(packageQueryResult.value.timeline, (item, index, i0) => {
+        ar: common_vendor.f(packageQueryResult.value.timeline, (item, index, i0) => {
           return common_vendor.e({
             a: index < packageQueryResult.value.timeline.length - 1
           }, index < packageQueryResult.value.timeline.length - 1 ? {} : {}, {
@@ -1429,40 +2188,191 @@ const _sfc_main = {
           });
         })
       } : packageQuerySearched.value ? {} : {}, {
-        ai: packageQuerySearched.value
-      }) : activeModule.value === "order-detail" ? {
-        ak: common_vendor.t(detailOrder.value.status),
-        al: common_vendor.t(detailOrder.value.id),
-        am: common_vendor.t(detailOrder.value.model),
-        an: common_vendor.t(detailOrder.value.doneTime),
-        ao: common_vendor.f(orderTimeline, (item, index, i0) => {
+        as: packageQuerySearched.value
+      }) : activeModule.value === "invoices" ? common_vendor.e({
+        av: common_vendor.f(invoiceFlow, (item, k0, i0) => {
+          return {
+            a: common_vendor.t(item.title),
+            b: common_vendor.t(item.desc),
+            c: item.title
+          };
+        }),
+        aw: !activeInvoiceOrderId.value
+      }, !activeInvoiceOrderId.value ? {
+        ax: common_vendor.f(invoiceTabs.value, (item, k0, i0) => {
+          return {
+            a: common_vendor.t(item),
+            b: item,
+            c: item.startsWith(activeInvoiceTab.value) ? 1 : "",
+            d: common_vendor.o(($event) => activeInvoiceTab.value = item.split(" ")[0], item)
+          };
+        })
+      } : {}, {
+        ay: activeInvoiceOrderId.value
+      }, activeInvoiceOrderId.value ? common_vendor.e({
+        az: common_vendor.t(activeInvoiceOrder.value.id),
+        aA: common_vendor.t(activeInvoiceOrder.value.price),
+        aB: common_vendor.o(cancelInvoiceApply, "e1"),
+        aC: common_vendor.t(invoiceForm.value.invoiceType),
+        aD: common_vendor.f(invoiceTitleTypes, (item, k0, i0) => {
+          return {
+            a: common_vendor.t(item.label),
+            b: common_vendor.t(item.desc),
+            c: item.value,
+            d: invoiceForm.value.titleType === item.value ? 1 : "",
+            e: common_vendor.o(($event) => invoiceForm.value.titleType = item.value, item.value)
+          };
+        }),
+        aE: invoiceForm.value.title,
+        aF: common_vendor.o(($event) => invoiceForm.value.title = $event.detail.value, "e0"),
+        aG: invoiceForm.value.titleType === "company"
+      }, invoiceForm.value.titleType === "company" ? {
+        aH: invoiceForm.value.taxNo,
+        aI: common_vendor.o(($event) => invoiceForm.value.taxNo = $event.detail.value, "22")
+      } : {}, {
+        aJ: invoiceForm.value.email,
+        aK: common_vendor.o(($event) => invoiceForm.value.email = $event.detail.value, "6f"),
+        aL: invoiceForm.value.remark,
+        aM: common_vendor.o(($event) => invoiceForm.value.remark = $event.detail.value, "89"),
+        aN: common_vendor.t(invoiceSubmitting.value ? "提交中..." : "确认提交"),
+        aO: invoiceSubmitting.value ? 1 : "",
+        aP: common_vendor.o(submitInvoiceApply, "e0")
+      }) : activeInvoiceTab.value === "待开票" ? common_vendor.e({
+        aR: common_vendor.f(invoiceFlow, (item, index, i0) => {
+          return {
+            a: common_vendor.t(index + 1),
+            b: common_vendor.t(item.title),
+            c: item.title
+          };
+        }),
+        aS: common_vendor.f(invoiceTodoOrders.value, (order, k0, i0) => {
+          return {
+            a: common_vendor.t(order.id),
+            b: common_vendor.t(order.model),
+            c: common_vendor.t(getInvoiceMeta(order).label),
+            d: common_vendor.n("tag-" + getInvoiceMeta(order).tone),
+            e: common_vendor.t(order.price),
+            f: common_vendor.t(order.date),
+            g: common_vendor.t(getInvoiceMeta(order).stage),
+            h: common_vendor.t(order.invoiceUrl ? "已生成" : "待开具"),
+            i: common_vendor.o(($event) => openOrderDetail(order), order.id),
+            j: common_vendor.t(getInvoiceStatusKey(order) === "available" ? "申请开票" : getInvoiceMeta(order).label),
+            k: getInvoiceStatusKey(order) !== "available" ? 1 : "",
+            l: common_vendor.o(($event) => startInvoiceApply(order), order.id),
+            m: order.id
+          };
+        }),
+        aT: !invoiceTodoOrders.value.length
+      }, !invoiceTodoOrders.value.length ? {} : {}) : common_vendor.e({
+        aU: common_vendor.f(invoiceIssuedOrders.value, (order, k0, i0) => {
+          return {
+            a: common_vendor.t(order.invoiceTitle || "发票抬头待同步"),
+            b: common_vendor.t(order.id),
+            c: common_vendor.t(order.price),
+            d: common_vendor.t(order.invoiceNo || "待同步"),
+            e: common_vendor.t(order.invoiceDate || "待同步"),
+            f: common_vendor.t(getInvoiceMeta(order).stage),
+            g: common_vendor.t(order.invoiceUrl ? "已生成" : "待同步"),
+            h: common_vendor.o(($event) => openOrderDetail(order), order.id),
+            i: common_vendor.o(($event) => copyInvoiceLink(order), order.id),
+            j: order.id
+          };
+        }),
+        aV: !invoiceIssuedOrders.value.length
+      }, !invoiceIssuedOrders.value.length ? {} : {}), {
+        aQ: activeInvoiceTab.value === "待开票"
+      }) : activeModule.value === "order-detail" ? common_vendor.e({
+        aX: common_vendor.t(detailOrder.value.status),
+        aY: common_vendor.t(detailOrder.value.id),
+        aZ: common_vendor.t(detailOrder.value.model),
+        ba: common_vendor.t(detailOrder.value.doneTime),
+        bb: common_vendor.f(detailTimeline.value, (item, index, i0) => {
           return common_vendor.e({
-            a: index < orderTimeline.length - 1
-          }, index < orderTimeline.length - 1 ? {} : {}, {
+            a: index < detailTimeline.value.length - 1
+          }, index < detailTimeline.value.length - 1 ? {} : {}, {
             b: item.pending ? 1 : "",
             c: common_vendor.t(item.title),
             d: item.pending ? 1 : "",
             e: common_vendor.t(item.time),
             f: common_vendor.t(item.desc),
-            g: item.title
+            g: item.title + index
           });
+        }),
+        bc: common_vendor.t(getQuoteMeta(detailOrder.value).desc),
+        bd: common_vendor.t(getQuoteMeta(detailOrder.value).label),
+        be: common_vendor.n("tag-" + getQuoteMeta(detailOrder.value).tone),
+        bf: detailQuoteItems.value.length
+      }, detailQuoteItems.value.length ? {
+        bg: common_vendor.f(detailQuoteItems.value, (item, index, i0) => {
+          return {
+            a: common_vendor.t(item.name),
+            b: common_vendor.t(item.desc || item.partName || "按检测结果维修"),
+            c: common_vendor.t(formatMoney(item.partsFee)),
+            d: common_vendor.t(formatMoney(item.laborFee)),
+            e: item.name + index
+          };
         })
-      } : activeModule.value === "survey" ? {
-        aq: common_vendor.o(closeModule, "7f"),
-        ar: common_vendor.unref(surveyPosterUrl),
-        as: common_vendor.o(previewSurveyPoster, "1e"),
-        at: common_vendor.o(closeModule, "c2"),
-        av: common_vendor.o(($event) => go("contact"), "ef")
+      } : {}, {
+        bh: detailQuoteItems.value.length
+      }, detailQuoteItems.value.length ? {
+        bi: common_vendor.t(formatMoney(detailOrder.value.partsFee)),
+        bj: common_vendor.t(formatMoney(detailOrder.value.laborFee)),
+        bk: common_vendor.t(formatMoney(getQuoteTotal(detailOrder.value)))
+      } : {}, {
+        bl: common_vendor.t(getAuthorizationMeta(detailOrder.value).desc),
+        bm: common_vendor.t(getAuthorizationMeta(detailOrder.value).label),
+        bn: common_vendor.n("tag-" + getAuthorizationMeta(detailOrder.value).tone),
+        bo: canConfirmRepair(detailOrder.value)
+      }, canConfirmRepair(detailOrder.value) ? {
+        bp: common_vendor.o(($event) => confirmRepairAuthorization(detailOrder.value), "48")
+      } : {}, {
+        bq: common_vendor.t(getPaymentMeta(detailOrder.value).desc),
+        br: common_vendor.t(getPaymentMeta(detailOrder.value).label),
+        bs: common_vendor.n("tag-" + getPaymentMeta(detailOrder.value).tone),
+        bt: common_vendor.t(detailQuoteItems.value.length ? formatMoney(getQuoteTotal(detailOrder.value)) : "待报价"),
+        bv: detailPaymentProofs.value.length
+      }, detailPaymentProofs.value.length ? {
+        bw: common_vendor.f(detailPaymentProofs.value, (proof, index, i0) => {
+          return {
+            a: proof.url || proof.path,
+            b: common_vendor.t(proof.time || "已上传"),
+            c: proof.id || proof.url || index,
+            d: common_vendor.o(($event) => previewPaymentProof(index), proof.id || proof.url || index)
+          };
+        })
+      } : {}, {
+        bx: canUploadPaymentProof(detailOrder.value)
+      }, canUploadPaymentProof(detailOrder.value) ? {
+        by: common_vendor.t(paymentProofUploading.value ? "上传中..." : "上传转账/支付凭证"),
+        bz: paymentProofUploading.value ? 1 : "",
+        bA: common_vendor.o(($event) => uploadPaymentProof(detailOrder.value), "79")
+      } : {}, {
+        bB: common_vendor.t(detailInvoiceOrder.value.invoiceType || "电子普通发票"),
+        bC: common_vendor.t(getInvoiceMeta(detailInvoiceOrder.value).desc),
+        bD: common_vendor.t(getInvoiceMeta(detailInvoiceOrder.value).label),
+        bE: common_vendor.n("tag-" + getInvoiceMeta(detailInvoiceOrder.value).tone),
+        bF: getInvoiceStatusKey(detailInvoiceOrder.value) === "available"
+      }, getInvoiceStatusKey(detailInvoiceOrder.value) === "available" ? {
+        bG: common_vendor.o(($event) => handleInvoiceAction(detailInvoiceOrder.value), "ab")
+      } : getInvoiceStatusKey(detailInvoiceOrder.value) === "issued" ? {
+        bI: common_vendor.o(($event) => handleInvoiceAction(detailInvoiceOrder.value), "e6")
+      } : {}, {
+        bH: getInvoiceStatusKey(detailInvoiceOrder.value) === "issued"
+      }) : activeModule.value === "survey" ? {
+        bK: common_vendor.o(closeModule, "bc"),
+        bL: common_vendor.unref(surveyPosterUrl),
+        bM: common_vendor.o(previewSurveyPoster, "83"),
+        bN: common_vendor.o(closeModule, "af")
       } : activeModule.value === "diag" ? common_vendor.e({
-        ax: common_vendor.t(diagProductLabel.value || "请选择产品类型"),
-        ay: !diagProductLabel.value ? 1 : "",
-        az: common_vendor.o(($event) => diagOpen.value = "product", "51"),
-        aA: common_vendor.t(diagFault.value || "请选择故障类型"),
-        aB: !diagFault.value ? 1 : "",
-        aC: common_vendor.o(openFaultSheet, "1e"),
-        aD: diagConfirmVisible.value
+        bP: common_vendor.t(diagProductLabel.value || "请选择产品类型"),
+        bQ: !diagProductLabel.value ? 1 : "",
+        bR: common_vendor.o(($event) => diagOpen.value = "product", "c1"),
+        bS: common_vendor.t(diagFault.value || "请选择故障类型"),
+        bT: !diagFault.value ? 1 : "",
+        bU: common_vendor.o(openFaultSheet, "e1"),
+        bV: diagConfirmVisible.value
       }, diagConfirmVisible.value ? {
-        aE: common_vendor.f(diagConfirmSections.value, (section, k0, i0) => {
+        bW: common_vendor.f(diagConfirmSections.value, (section, k0, i0) => {
           return {
             a: section.color,
             b: common_vendor.t(section.title),
@@ -1476,18 +2386,18 @@ const _sfc_main = {
             d: section.title
           };
         }),
-        aF: common_vendor.o(resetDiag, "62"),
-        aG: common_vendor.o(($event) => go("repair"), "fb")
+        bX: common_vendor.o(resetDiag, "e1"),
+        bY: common_vendor.o(($event) => go("repair"), "39")
       } : {}, {
-        aH: diagOpen.value
+        bZ: diagOpen.value
       }, diagOpen.value ? {
-        aI: common_vendor.o(($event) => diagOpen.value = "", "3f")
+        ca: common_vendor.o(($event) => diagOpen.value = "", "00")
       } : {}, {
-        aJ: diagOpen.value
+        cb: diagOpen.value
       }, diagOpen.value ? {
-        aK: common_vendor.o(($event) => diagOpen.value = "", "34"),
-        aL: common_vendor.t(diagOpen.value === "product" ? "选择产品类型" : "选择故障类型"),
-        aM: common_vendor.f(diagSheetOptions.value, (item, k0, i0) => {
+        cc: common_vendor.o(($event) => diagOpen.value = "", "30"),
+        cd: common_vendor.t(diagOpen.value === "product" ? "选择产品类型" : "选择故障类型"),
+        ce: common_vendor.f(diagSheetOptions.value, (item, k0, i0) => {
           return common_vendor.e({
             a: common_vendor.t(item.title),
             b: item.active
@@ -1497,27 +2407,27 @@ const _sfc_main = {
           });
         })
       } : {}) : activeModule.value === "warranty" ? common_vendor.e({
-        aO: common_vendor.t(warrantyDoc.value.title || "三重保修承诺"),
-        aP: common_vendor.t(warrantyDoc.value.lead || "原厂配件 · 工艺质保 · 终身咨询"),
-        aQ: warrantyDoc.value.content
+        cg: common_vendor.t(warrantyDoc.value.title || "三重保修承诺"),
+        ch: common_vendor.t(warrantyDoc.value.lead || "原厂配件 · 工艺质保 · 终身咨询"),
+        ci: warrantyDoc.value.content
       }, warrantyDoc.value.content ? {
-        aR: warrantyDoc.value.content
+        cj: warrantyDoc.value.content
       } : {}, {
-        aS: common_vendor.f(warrantyDurations, (item, k0, i0) => {
+        ck: common_vendor.f(warrantyDurations, (item, k0, i0) => {
           return {
             a: common_vendor.t(item.name),
             b: common_vendor.t(item.duration),
             c: item.name
           };
         }),
-        aT: common_vendor.f(warrantyRanges, (item, index, i0) => {
+        cl: common_vendor.f(warrantyRanges, (item, index, i0) => {
           return {
             a: common_vendor.t(index + 1),
             b: common_vendor.t(item),
             c: item
           };
         }),
-        aU: common_vendor.f(warrantyServices, (item, k0, i0) => {
+        cm: common_vendor.f(warrantyServices, (item, k0, i0) => {
           return {
             a: common_vendor.n("glyph-" + item.icon),
             b: common_vendor.t(item.title),
@@ -1525,9 +2435,9 @@ const _sfc_main = {
             d: item.title
           };
         }),
-        aV: !warrantyDoc.value.content
+        cn: !warrantyDoc.value.content
       }, !warrantyDoc.value.content ? {
-        aW: common_vendor.f(warrantyTerms, (section, k0, i0) => {
+        co: common_vendor.f(warrantyTerms, (section, k0, i0) => {
           return {
             a: common_vendor.t(section.title),
             b: common_vendor.f(section.lines, (line, index, i1) => {
@@ -1541,18 +2451,18 @@ const _sfc_main = {
           };
         })
       } : {}) : isDocModule.value ? common_vendor.e({
-        aY: activeModule.value === "fees"
+        cq: activeModule.value === "fees"
       }, activeModule.value === "fees" ? {} : {
-        aZ: common_vendor.n("glyph-" + activeDoc.value.icon),
-        ba: common_vendor.t(activeDoc.value.title),
-        bb: common_vendor.t(activeDoc.value.lead)
+        cr: common_vendor.n("glyph-" + activeDoc.value.icon),
+        cs: common_vendor.t(activeDoc.value.title),
+        ct: common_vendor.t(activeDoc.value.lead)
       }, {
-        bc: activeDoc.value.content
+        cv: activeDoc.value.content
       }, activeDoc.value.content ? {
-        bd: activeDoc.value.content
+        cw: activeDoc.value.content
       } : {
-        be: common_vendor.t(activeDoc.value.paperTitle),
-        bf: common_vendor.f(activeDoc.value.sections, (section, k0, i0) => {
+        cx: common_vendor.t(activeDoc.value.paperTitle),
+        cy: common_vendor.f(activeDoc.value.sections, (section, k0, i0) => {
           return {
             a: common_vendor.t(section.title),
             b: common_vendor.f(section.lines, (line, index, i1) => {
@@ -1566,9 +2476,9 @@ const _sfc_main = {
           };
         })
       }, {
-        bg: activeDoc.value.steps
+        cz: activeDoc.value.steps
       }, activeDoc.value.steps ? {
-        bh: common_vendor.f(activeDoc.value.steps, (step, index, i0) => {
+        cA: common_vendor.f(activeDoc.value.steps, (step, index, i0) => {
           return {
             a: common_vendor.t(index + 1),
             b: common_vendor.t(step.title),
@@ -1577,14 +2487,14 @@ const _sfc_main = {
           };
         })
       } : {}, {
-        bi: activeModule.value !== "fees"
+        cB: activeModule.value !== "fees"
       }, activeModule.value !== "fees" ? {
-        bj: common_vendor.o(($event) => go("contact"), "eb"),
-        bk: common_vendor.o(($event) => go("repair"), "c8")
+        cC: common_vendor.o(($event) => go("contact"), "17"),
+        cD: common_vendor.o(($event) => go("repair"), "7b")
       } : {}) : activeModule.value === "contact" ? {
-        bm: common_vendor.t(customerService.value.title || "在线客服"),
-        bn: common_vendor.t(customerService.value.description || "7×24 小时 · 即时响应"),
-        bo: common_vendor.f(contactHotlines.value, (item, k0, i0) => {
+        cF: common_vendor.t(customerService.value.title || "在线客服"),
+        cG: common_vendor.t(customerService.value.description || "7×24 小时 · 即时响应"),
+        cH: common_vendor.f(contactHotlines.value, (item, k0, i0) => {
           return {
             a: common_vendor.t(item.title),
             b: common_vendor.t(item.number),
@@ -1592,16 +2502,16 @@ const _sfc_main = {
             d: item.title
           };
         }),
-        bp: common_vendor.t(contactInfo.value.companyName),
-        bq: common_vendor.f(receiver.value, (item, k0, i0) => {
+        cI: common_vendor.t(contactInfo.value.companyName),
+        cJ: common_vendor.f(receiver.value, (item, k0, i0) => {
           return {
             a: common_vendor.t(item.label),
             b: common_vendor.t(item.value),
             c: item.label
           };
         }),
-        br: common_vendor.o(copyAll, "35"),
-        bs: common_vendor.f(workTimes.value, (item, k0, i0) => {
+        cK: common_vendor.o(copyAll, "c5"),
+        cL: common_vendor.f(workTimes.value, (item, k0, i0) => {
           return {
             a: common_vendor.t(item.day),
             b: common_vendor.t(item.time),
@@ -1609,29 +2519,30 @@ const _sfc_main = {
           };
         })
       } : activeModule.value === "orders" ? common_vendor.e({
-        bv: common_vendor.f(orderTabs.value, (item, k0, i0) => {
+        cN: common_vendor.f(orderTabs.value, (item, k0, i0) => {
           return {
-            a: common_vendor.t(item),
-            b: item,
-            c: item.startsWith(activeOrdersTab.value) ? 1 : "",
-            d: common_vendor.o(($event) => activeOrdersTab.value = item.split(" ")[0], item)
+            a: common_vendor.t(item.label),
+            b: common_vendor.t(item.count),
+            c: item.key,
+            d: item.key === activeOrdersTab.value ? 1 : "",
+            e: common_vendor.o(($event) => activeOrdersTab.value = item.key, item.key)
           };
         }),
-        bw: common_vendor.f(filteredOrderList.value, (order, k0, i0) => {
+        cO: common_vendor.f(filteredOrderList.value, (order, k0, i0) => {
           return {
             a: common_vendor.t(order.id),
             b: common_vendor.t(order.model),
             c: common_vendor.t(order.date),
             d: common_vendor.t(order.status),
-            e: common_vendor.n("tag-" + order.tone),
-            f: common_vendor.t(order.price),
+            e: common_vendor.n("tag-" + getOrderStatusTone(order)),
+            f: common_vendor.t(formatOrderListPrice(order)),
             g: order.id,
             h: common_vendor.o(($event) => openOrderDetail(order), order.id)
           };
         }),
-        bx: !filteredOrderList.value.length
-      }, !filteredOrderList.value.length ? {} : {}) : activeModule.value === "products" ? {
-        bz: common_vendor.f(productList, (item, k0, i0) => {
+        cP: !filteredOrderList.value.length
+      }, !filteredOrderList.value.length ? {} : {}) : activeModule.value === "products" ? common_vendor.e({
+        cR: common_vendor.f(productList.value, (item, k0, i0) => {
           return {
             a: common_vendor.t(item.title),
             b: common_vendor.t(item.sn),
@@ -1641,23 +2552,31 @@ const _sfc_main = {
             f: common_vendor.o(($event) => go("repair"), item.sn),
             g: item.sn
           };
-        })
-      } : activeModule.value === "address" ? {
-        bB: addressForm.value.name,
-        bC: common_vendor.o(($event) => addressForm.value.name = $event.detail.value, "db"),
-        bD: addressForm.value.phone,
-        bE: common_vendor.o(($event) => addressForm.value.phone = $event.detail.value, "f0"),
-        bF: addressForm.value.region,
-        bG: common_vendor.o(($event) => addressForm.value.region = $event.detail.value, "4a"),
-        bH: addressForm.value.detail,
-        bI: common_vendor.o(($event) => addressForm.value.detail = $event.detail.value, "64"),
-        bJ: addressForm.value.unit,
-        bK: common_vendor.o(($event) => addressForm.value.unit = $event.detail.value, "fd"),
-        bL: addressForm.value.def ? 1 : "",
-        bM: common_vendor.o(($event) => addressForm.value.def = !addressForm.value.def, "67"),
-        bN: common_vendor.o(saveAddress, "3f")
-      } : activeModule.value === "feedback" ? {
-        bP: common_vendor.f(feedbackTypes, (item, k0, i0) => {
+        }),
+        cS: !productList.value.length
+      }, !productList.value.length ? {} : {}) : activeModule.value === "address" ? common_vendor.e({
+        cU: common_vendor.o(closeModule, "1f"),
+        cV: common_vendor.t(addressForm.value.addressId ? "编辑收货地址" : "新增收货地址"),
+        cW: addressForm.value.name,
+        cX: common_vendor.o(($event) => addressForm.value.name = $event.detail.value, "c8"),
+        cY: addressForm.value.phone,
+        cZ: common_vendor.o(($event) => addressForm.value.phone = $event.detail.value, "9f"),
+        da: addressForm.value.region,
+        db: common_vendor.o(($event) => addressForm.value.region = $event.detail.value, "47"),
+        dc: common_vendor.o(selectRegion, "48"),
+        dd: addressForm.value.detail,
+        de: common_vendor.o(($event) => addressForm.value.detail = $event.detail.value, "bd"),
+        df: addressForm.value.unit,
+        dg: common_vendor.o(($event) => addressForm.value.unit = $event.detail.value, "1b"),
+        dh: addressForm.value.def ? 1 : "",
+        di: common_vendor.o(($event) => addressForm.value.def = !addressForm.value.def, "2e"),
+        dj: addressForm.value.addressId
+      }, addressForm.value.addressId ? {
+        dk: common_vendor.o(handleDeleteAddress, "dd")
+      } : {}, {
+        dl: common_vendor.o(saveAddress, "59")
+      }) : activeModule.value === "feedback" ? common_vendor.e({
+        dn: common_vendor.f(feedbackTypes, (item, k0, i0) => {
           return {
             a: common_vendor.t(item),
             b: item,
@@ -1665,12 +2584,12 @@ const _sfc_main = {
             d: common_vendor.o(($event) => feedbackType.value = item, item)
           };
         }),
-        bQ: common_vendor.t(feedbackType.value === "投诉" ? "收到投诉后，主管会在 24 小时内主动联系您" : "欢迎提出您宝贵的建议，采纳后可获赠小礼品"),
-        bR: feedbackType.value === "投诉" ? "请描述问题发生的时间、经过以及您的诉求……" : "请描述您的建议与期望，我们会认真评估……",
-        bS: feedbackText.value,
-        bT: common_vendor.o(($event) => feedbackText.value = $event.detail.value, "e0"),
-        bU: common_vendor.t(feedbackText.value.length),
-        bV: common_vendor.f(feedbackContacts, (item, k0, i0) => {
+        dp: common_vendor.t(feedbackType.value === "投诉" ? "收到投诉后，主管会在 24 小时内主动联系您" : "欢迎提出您宝贵的建议，采纳后可获赠小礼品"),
+        dq: feedbackType.value === "投诉" ? "请描述问题发生的时间、经过以及您的诉求……" : "请描述您的建议与期望，我们会认真评估……",
+        dr: feedbackText.value,
+        ds: common_vendor.o(($event) => feedbackText.value = $event.detail.value, "29"),
+        dt: common_vendor.t(feedbackText.value.length),
+        dv: common_vendor.f(feedbackContacts, (item, k0, i0) => {
           return {
             a: common_vendor.t(item.title),
             b: item.id,
@@ -1678,45 +2597,61 @@ const _sfc_main = {
             d: common_vendor.o(($event) => feedbackContactKind.value = item.id, item.id)
           };
         }),
-        bW: common_vendor.t(feedbackContact.value.label),
-        bX: feedbackContact.value.placeholder,
-        bY: feedbackContactValue.value,
-        bZ: common_vendor.o(($event) => feedbackContactValue.value = $event.detail.value, "47"),
-        ca: feedbackOrderId.value,
-        cb: common_vendor.o(($event) => feedbackOrderId.value = $event.detail.value, "5a"),
-        cc: common_vendor.t(feedbackType.value),
-        cd: common_vendor.o(submitFeedback, "af")
-      } : activeModule.value === "login" ? {
-        cf: common_vendor.o(loginSuccess, "94"),
-        cg: common_vendor.o(loginSuccess, "84")
+        dw: common_vendor.t(feedbackContact.value.label),
+        dx: feedbackContact.value.placeholder,
+        dy: feedbackContactValue.value,
+        dz: common_vendor.o(($event) => feedbackContactValue.value = $event.detail.value, "1d"),
+        dA: feedbackOrderId.value,
+        dB: common_vendor.o(($event) => feedbackOrderId.value = $event.detail.value, "6b"),
+        dC: common_vendor.t(feedbackType.value),
+        dD: common_vendor.o(submitFeedback, "9f"),
+        dE: feedbackRecords.value.length
+      }, feedbackRecords.value.length ? {
+        dF: common_vendor.f(feedbackRecords.value, (record, k0, i0) => {
+          return {
+            a: common_vendor.t(record.ticketNo),
+            b: common_vendor.t(record.type),
+            c: common_vendor.t(record.time),
+            d: common_vendor.t(getFeedbackMeta(record).label),
+            e: common_vendor.n("tag-" + getFeedbackMeta(record).tone),
+            f: common_vendor.t(record.orderId || "未关联"),
+            g: common_vendor.t(record.contact),
+            h: common_vendor.t(record.content),
+            i: common_vendor.t(record.reply || "已收到反馈，客服处理后会在这里同步回复。"),
+            j: record.ticketNo
+          };
+        })
+      } : {}) : activeModule.value === "login" ? {
+        dH: common_vendor.o(onGetPhoneNumberLogin, "17")
       } : {}, {
-        H: activeModule.value === "repair-success",
-        M: activeModule.value === "track",
-        Q: activeModule.value === "package-query",
-        aj: activeModule.value === "order-detail",
-        ap: activeModule.value === "survey",
-        aw: activeModule.value === "diag",
-        aN: activeModule.value === "warranty",
-        aX: isDocModule.value,
-        bl: activeModule.value === "contact",
-        bt: activeModule.value === "orders",
-        by: activeModule.value === "products",
-        bA: activeModule.value === "address",
-        bO: activeModule.value === "feedback",
-        ce: activeModule.value === "login",
-        ch: activeModule.value === "survey" ? 1 : ""
+        N: activeModule.value === "repair-success",
+        S: activeModule.value === "track",
+        Y: activeModule.value === "package-query",
+        at: activeModule.value === "invoices",
+        aW: activeModule.value === "order-detail",
+        bJ: activeModule.value === "survey",
+        bO: activeModule.value === "diag",
+        cf: activeModule.value === "warranty",
+        cp: isDocModule.value,
+        cE: activeModule.value === "contact",
+        cM: activeModule.value === "orders",
+        cQ: activeModule.value === "products",
+        cT: activeModule.value === "address",
+        dm: activeModule.value === "feedback",
+        dG: activeModule.value === "login",
+        dI: activeModule.value === "survey" ? 1 : ""
       }) : pageBootReady.value ? common_vendor.e({
-        cj: activeTab.value === "home"
+        dK: activeTab.value === "home"
       }, activeTab.value === "home" ? {
-        ck: common_assets._imports_0,
-        cl: common_vendor.o(($event) => showQr.value = true, "96"),
-        cm: common_vendor.o(($event) => go("contact"), "2e"),
-        cn: common_vendor.o(handleSearch, "78"),
-        co: searchKeyword.value,
-        cp: common_vendor.o(($event) => searchKeyword.value = $event.detail.value, "07"),
-        cq: common_vendor.o(handleSearch, "d0"),
-        cr: common_vendor.unref(config_cicadaAssets.cicadaAssets).photoFactory,
-        cs: common_vendor.f(basics, (item, k0, i0) => {
+        dL: common_assets._imports_0,
+        dM: common_vendor.o(handleSearch, "c9"),
+        dN: searchKeyword.value,
+        dO: common_vendor.o(($event) => searchKeyword.value = $event.detail.value, "11"),
+        dP: common_vendor.o(handleSearch, "ce"),
+        dQ: common_assets._imports_1,
+        dR: common_vendor.o(($event) => showQr.value = true, "ec"),
+        dS: common_vendor.unref(config_cicadaAssets.cicadaAssets).photoFactory,
+        dT: common_vendor.f(basics, (item, k0, i0) => {
           return {
             a: common_vendor.n("glyph-" + item.icon),
             b: item.bg,
@@ -1726,7 +2661,7 @@ const _sfc_main = {
             f: common_vendor.o(($event) => go(item.id), item.id)
           };
         }),
-        ct: common_vendor.f(queries, (item, k0, i0) => {
+        dU: common_vendor.f(queries, (item, k0, i0) => {
           return {
             a: common_vendor.n("glyph-" + item.icon),
             b: item.bg,
@@ -1736,7 +2671,7 @@ const _sfc_main = {
             f: common_vendor.o(($event) => go(item.id), item.id)
           };
         }),
-        cv: common_vendor.f(guides, (item, k0, i0) => {
+        dV: common_vendor.f(guides, (item, k0, i0) => {
           return {
             a: common_vendor.n("glyph-" + item.icon),
             b: common_vendor.t(item.title),
@@ -1744,9 +2679,9 @@ const _sfc_main = {
             d: common_vendor.o(($event) => go(item.id), item.id)
           };
         }),
-        cw: common_vendor.o(openCustomerService, "71"),
-        cx: common_vendor.o(makePhoneCall, "ae"),
-        cy: common_vendor.f(receiver.value, (item, index, i0) => {
+        dW: common_vendor.o(openCustomerService, "97"),
+        dX: common_vendor.o(makePhoneCall, "2d"),
+        dY: common_vendor.f(receiver.value, (item, index, i0) => {
           return common_vendor.e({
             a: common_vendor.t(item.label),
             b: common_vendor.t(item.value),
@@ -1757,14 +2692,37 @@ const _sfc_main = {
             f: index === receiverLastIndex.value ? 1 : ""
           });
         }),
-        cz: common_vendor.t(copied.value === "all" ? "已复制" : "一键复制以上收件信息"),
-        cA: common_vendor.o(copyAll, "da"),
-        cB: common_vendor.o(($event) => go("contact"), "83")
+        dZ: common_vendor.t(copied.value === "all" ? "已复制" : "一键复制以上收件信息"),
+        ea: common_vendor.o(copyAll, "e2"),
+        eb: common_vendor.o(($event) => go("contact"), "07")
       } : activeTab.value === "company" ? {
-        cD: common_vendor.unref(config_cicadaAssets.cicadaAssets).logoMark,
-        cE: common_vendor.unref(config_cicadaAssets.cicadaAssets).photoBuilding,
-        cF: common_vendor.unref(config_cicadaAssets.cicadaAssets).logoFull,
-        cG: common_vendor.f(advantages, (item, k0, i0) => {
+        ed: common_vendor.unref(config_cicadaAssets.cicadaAssets).logoNew,
+        ee: common_vendor.unref(config_cicadaAssets.cicadaAssets).photoFactory,
+        ef: common_vendor.unref(config_cicadaAssets.cicadaAssets).logoNew,
+        eg: common_vendor.f(companyStats, (item, k0, i0) => {
+          return {
+            a: common_vendor.t(item.value),
+            b: common_vendor.t(item.label),
+            c: common_vendor.t(item.desc),
+            d: item.label
+          };
+        }),
+        eh: common_vendor.f(companyIntro, (item, k0, i0) => {
+          return {
+            a: common_vendor.t(item),
+            b: item
+          };
+        }),
+        ei: common_vendor.f(companyProductLines, (item, index, i0) => {
+          return {
+            a: common_vendor.n("device-" + index % 3),
+            b: item.gradient,
+            c: common_vendor.t(item.title),
+            d: common_vendor.t(item.desc),
+            e: item.title
+          };
+        }),
+        ej: common_vendor.f(companyAdvantages, (item, k0, i0) => {
           return {
             a: common_vendor.n("adv-" + item.icon),
             b: common_vendor.t(item.title),
@@ -1772,27 +2730,25 @@ const _sfc_main = {
             d: item.title
           };
         }),
-        cH: common_vendor.f(business, (item, index, i0) => {
+        ek: common_vendor.f(companyServiceTags, (item, k0, i0) => {
           return {
-            a: common_vendor.n("device-" + index),
-            b: item.gradient,
-            c: common_vendor.t(item.title),
-            d: common_vendor.t(item.desc),
-            e: item.title
+            a: common_vendor.t(item),
+            b: item
           };
         }),
-        cI: wechatInfo.value.qrcodeUrl
+        el: wechatInfo.value.qrcodeUrl
       } : common_vendor.e({
-        cJ: common_vendor.t(logged.value ? "李" : ""),
-        cK: common_vendor.t(logged.value ? "李医生" : "未登录"),
-        cL: logged.value
+        em: common_vendor.t(logged.value ? userAvatarText.value : ""),
+        en: common_vendor.t(logged.value ? userDisplayName.value : "未登录"),
+        eo: logged.value
       }, logged.value ? {
-        cM: common_vendor.o(($event) => logged.value = false, "66")
+        ep: common_vendor.t(userDisplayUnit.value),
+        eq: common_vendor.o(logoutLocal, "b4")
       } : {
-        cN: common_vendor.o(($event) => go("login"), "74")
+        er: common_vendor.o(($event) => go("login"), "54")
       }, {
-        cO: common_vendor.o(($event) => go("orders"), "64"),
-        cP: common_vendor.f(statusItems.value, (item, k0, i0) => {
+        es: common_vendor.o(($event) => go("orders"), "85"),
+        et: common_vendor.f(statusItems.value, (item, k0, i0) => {
           return common_vendor.e({
             a: common_vendor.n("glyph-" + item.icon),
             b: item.count
@@ -1806,7 +2762,7 @@ const _sfc_main = {
             h: common_vendor.o(($event) => go("orders", item.type), item.id)
           });
         }),
-        cQ: common_vendor.f(menus, (item, index, i0) => {
+        ev: common_vendor.f(menus, (item, index, i0) => {
           return {
             a: common_vendor.n("glyph-" + item.icon),
             b: common_vendor.t(item.title),
@@ -1816,57 +2772,52 @@ const _sfc_main = {
             f: common_vendor.o(($event) => go(item.go), item.title)
           };
         }),
-        cR: common_vendor.unref(config_cicadaAssets.cicadaAssets).logoFull
+        ew: common_vendor.unref(config_cicadaAssets.cicadaAssets).logoNew
       }), {
-        cC: activeTab.value === "company"
+        ec: activeTab.value === "company"
       }) : {
-        cS: common_vendor.unref(config_cicadaAssets.cicadaAssets).logoMark
+        ex: common_vendor.unref(config_cicadaAssets.cicadaAssets).logoMark
       }, {
-        ci: pageBootReady.value,
-        cT: !activeModule.value && activeTab.value === "home"
+        dJ: pageBootReady.value,
+        ey: !activeModule.value && activeTab.value === "home"
       }, !activeModule.value && activeTab.value === "home" ? {
-        cU: common_vendor.o(($event) => showOfficial.value = true, "bd")
+        ez: common_vendor.o(($event) => showOfficial.value = true, "6d")
       } : {}, {
-        cV: !activeModule.value
-      }, !activeModule.value ? {
-        cW: common_vendor.f(tabs, (item, k0, i0) => {
-          return {
-            a: common_vendor.n("tab-" + item.icon),
-            b: common_vendor.t(item.label),
-            c: item.id,
-            d: activeTab.value === item.id ? 1 : "",
-            e: common_vendor.o(($event) => go(item.id), item.id)
-          };
+        eA: showBottomTabbar.value
+      }, showBottomTabbar.value ? {
+        eB: common_vendor.o(go, "4c"),
+        eC: common_vendor.p({
+          tabs,
+          ["active-id"]: activeTab.value
         })
       } : {}, {
-        cX: showOfficial.value
+        eD: showOfficial.value
       }, showOfficial.value ? {
-        cY: common_vendor.o(($event) => showOfficial.value = false, "75"),
-        cZ: common_vendor.o(($event) => showOfficial.value = false, "43"),
-        da: common_vendor.o(goOfficial, "8d"),
-        db: common_vendor.o(() => {
-        }, "a2"),
-        dc: common_vendor.o(($event) => showOfficial.value = false, "4a")
+        eE: common_vendor.o(($event) => showOfficial.value = false, "5f"),
+        eF: common_vendor.o(($event) => showOfficial.value = false, "03"),
+        eG: common_vendor.o(goOfficial, "fb"),
+        eH: common_vendor.o(() => {
+        }, "57"),
+        eI: common_vendor.o(($event) => showOfficial.value = false, "e2")
       } : {}, {
-        dd: showQr.value
+        eJ: showQr.value
       }, showQr.value ? {
-        de: common_vendor.o(($event) => showQr.value = false, "b6"),
-        df: common_vendor.unref(config_cicadaAssets.cicadaAssets).logoFull,
-        dg: wechatInfo.value.qrcodeUrl,
-        dh: common_vendor.o(($event) => showQr.value = false, "f4"),
-        di: common_vendor.o(() => {
-        }, "bf"),
-        dj: common_vendor.o(($event) => showQr.value = false, "0c")
+        eK: common_vendor.o(($event) => showQr.value = false, "d2"),
+        eL: common_vendor.unref(config_cicadaAssets.cicadaAssets).logoNew,
+        eM: wechatInfo.value.qrcodeUrl,
+        eN: common_vendor.o(() => {
+        }, "1d"),
+        eO: common_vendor.o(($event) => showQr.value = false, "dd")
       } : {}, {
-        dk: showRepairTools.value
+        eP: showRepairTools.value
       }, showRepairTools.value ? {
-        dl: common_vendor.o(($event) => showRepairTools.value = false, "08")
+        eQ: common_vendor.o(($event) => showRepairTools.value = false, "06")
       } : {}, {
-        dm: showRepairTools.value
+        eR: showRepairTools.value
       }, showRepairTools.value ? {
-        dn: common_vendor.o(saveRepairDraft, "6a"),
-        dp: common_vendor.o(confirmClearRepair, "7c"),
-        dq: common_vendor.o(($event) => showRepairTools.value = false, "00")
+        eS: common_vendor.o(saveRepairDraft, "28"),
+        eT: common_vendor.o(confirmClearRepair, "13"),
+        eU: common_vendor.o(($event) => showRepairTools.value = false, "56")
       } : {});
     };
   }

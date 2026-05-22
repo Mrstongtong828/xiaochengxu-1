@@ -162,6 +162,7 @@ unpackage/              编译输出
 - 优先确认 `uniCloud-alipay/database/INDEXES.md` 里的索引是否已创建。
 - `config/cicada-assets.js` 里的图片链接需要替换成可访问的 CDN 地址。
 - 微信登录云对象需要在 uniCloud 环境变量中配置 `WX_APPID` 和 `WX_SECRET`，不要把 AppSecret 写进代码。
+- `cloudfunctions/**/wechat-config.json` 和 `uniCloud/**/wechat-config.json` 当前只保留示例占位符，真实配置不要提交到 Git。
 - 如果登录方式要统一，建议先确认前端登录页是否继续保留云对象方式。
 
 ## 相关文件

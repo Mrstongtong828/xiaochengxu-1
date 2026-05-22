@@ -1,11 +1,19 @@
 import request from '@/utils/request.js'
-import { callCloudFunction } from '@/utils/cloud.js'
 
 const USE_CLOUD = true
 
+let userCloudObject = null
+
+const getCloudObject = () => {
+  if (!userCloudObject) {
+    userCloudObject = uniCloud.importObject('cicada-client-user')
+  }
+  return userCloudObject
+}
+
 export const getRepairList = (params = {}) => {
   if (USE_CLOUD) {
-    return callCloudFunction('getRepairList', params)
+    return getCloudObject().getRepairList(params)
   }
   return request({
     url: '/repair/list',
@@ -16,7 +24,7 @@ export const getRepairList = (params = {}) => {
 
 export const getRepairDetail = (id) => {
   if (USE_CLOUD) {
-    return callCloudFunction('getRepairDetail', { id })
+    return getCloudObject().getRepairDetail({ id })
   }
   return request({
     url: `/repair/detail/${id}`,
@@ -26,7 +34,7 @@ export const getRepairDetail = (id) => {
 
 export const submitRepair = (data) => {
   if (USE_CLOUD) {
-    return callCloudFunction('submitRepair', { data })
+    return getCloudObject().submitRepair({ data })
   }
   return request({
     url: '/repair/submit',
@@ -37,7 +45,7 @@ export const submitRepair = (data) => {
 
 export const cancelRepair = (id, reason) => {
   if (USE_CLOUD) {
-    return callCloudFunction('cancelRepair', { id, reason })
+    return getCloudObject().cancelRepair({ id, reason })
   }
   return request({
     url: `/repair/cancel/${id}`,

@@ -1,0 +1,10 @@
+{
+  "isCloudDev": true,
+  "appid": "__UNI__C99308C",
+  "service": {
+    "default": {
+      "spaceId": "env-00jy6bcqqsjw",
+      "provider": "alipay"
+    }
+  }
+}

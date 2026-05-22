@@ -11,14 +11,15 @@ exports.main = async (event, context) => {
       .limit(1)
       .get()
 
-    if (!tokenRes.data.length) {
+    const tokenRecord = tokenRes.data[0]
+    if (!tokenRecord || tokenRecord.revoked || (tokenRecord.expireTime && tokenRecord.expireTime < Date.now())) {
       return {
         code: 401,
-        message: '请先登录'
+        message: '登录已过期，请重新登录'
       }
     }
 
-    const userId = tokenRes.data[0].userId
+    const userId = tokenRecord.userId
 
     if (!data.receiverName || !data.receiverPhone) {
       return {
@@ -43,7 +44,8 @@ exports.main = async (event, context) => {
       receiverPhone: data.receiverPhone,
       receiverAddress: data.receiverAddress || '',
       products: data.products,
-      status: 'pending',
+      status: 'submitted',
+      statusText: '已提交',
       createTime: Date.now(),
       updateTime: Date.now()
     })

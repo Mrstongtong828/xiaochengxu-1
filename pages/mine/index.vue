@@ -28,14 +28,14 @@
 
 			<view class="profile-row">
 				<view class="avatar">
-					<text v-if="logged">李</text>
+					<text v-if="logged">{{ userAvatarText }}</text>
 					<view v-else class="avatar-empty"></view>
 				</view>
 				<view class="profile-copy">
-					<text class="profile-name">{{ logged ? '李医生' : '未登录' }}</text>
+					<text class="profile-name">{{ logged ? userDisplayName : '未登录' }}</text>
 					<view v-if="logged" class="profile-meta">
-						<text>桂林口腔门诊</text>
-						<text class="member-tag">高级会员</text>
+						<text>{{ userDisplayUnit }}</text>
+						<text class="member-tag">已登录</text>
 					</view>
 					<text v-else class="profile-meta-text">登录后查看您的维修订单</text>
 				</view>
@@ -91,40 +91,83 @@
 			<text>佛山思科达 · 牙医仪器检修 v1.2.0</text>
 		</view>
 
-		<view class="bottom-tabbar">
-			<view v-for="item in tabs" :key="item.id" class="tab-item tap" :class="{ active: item.id === 'mine' }" @click="go(item.id)">
-				<view :class="['tab-icon', 'tab-' + item.icon]"><view></view></view>
-				<text>{{ item.label }}</text>
-			</view>
-		</view>
+		<BottomTabbar :tabs="tabs" active-id="mine" @select="go" />
 	</view>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { computed, ref, onMounted } from 'vue'
+import BottomTabbar from '@/components/BottomTabbar.vue'
 import { cicadaAssets } from '@/config/cicada-assets'
+import { getRepairList } from '@/api/content'
 
 const logged = ref(false)
+const currentUser = ref({})
+const repairCounts = ref({ all: 0, pending: 0, fixing: 0, shipped: 0 })
 
 onMounted(() => {
-	// 检查登录状态
-	const isLoggedIn = uni.getStorageSync('isLoggedIn')
-	logged.value = isLoggedIn === true
+	const token = uni.getStorageSync('token')
+	currentUser.value = uni.getStorageSync('userInfo') || {}
+	logged.value = Boolean(token)
+	if (token) loadRepairCounts()
 })
 
-const statusItems = [
-	{ id: 'all', title: '全部', count: 3, color: '#1E6FE0', bg: 'rgba(30, 111, 224, 0.09)', icon: 'invoice', type: 0 },
-	{ id: 'pending', title: '待处理', count: 1, color: '#F59E0B', bg: 'rgba(245, 158, 11, 0.09)', icon: 'track', type: 1 },
-	{ id: 'fixing', title: '维修中', count: 1, color: '#0EA5E9', bg: 'rgba(14, 165, 233, 0.09)', icon: 'repair', type: 2 },
-	{ id: 'shipped', title: '已发货', count: 1, color: '#10B981', bg: 'rgba(16, 185, 129, 0.09)', icon: 'truck', type: 3 },
-	{ id: 'not_invoiced', title: '未开票', count: 0, color: '#F59E0B', bg: 'rgba(245, 158, 11, 0.09)', icon: 'invoice', type: 4 },
-	{ id: 'invoiced', title: '已开票', count: 0, color: '#10B981', bg: 'rgba(16, 185, 129, 0.09)', icon: 'check', type: 5 }
-]
+const normalizeStatus = (value = '') => {
+	const raw = String(value || '').trim()
+	const map = {
+		pending: '已提交',
+		submitted: '已提交',
+		sent: '已寄出',
+		received: '已签收',
+		checking: '检测中',
+		quote_pending: '待报价',
+		waiting_confirm: '待确认',
+		fixing: '维修中',
+		repairing: '维修中',
+		shipped: '已发货',
+		completed: '已完成',
+		reviewed: '已评价'
+	}
+	return map[raw] || map[raw.toLowerCase()] || raw
+}
+
+const userDisplayName = computed(() => currentUser.value.nickname || currentUser.value.name || (currentUser.value.phone ? `用户${String(currentUser.value.phone).slice(-4)}` : '已登录用户'))
+const userDisplayUnit = computed(() => currentUser.value.unit || currentUser.value.companyName || '已绑定手机号')
+const userAvatarText = computed(() => String(userDisplayName.value || '用').slice(0, 1))
+
+const statusItems = computed(() => [
+	{ id: 'all', title: '全部', count: repairCounts.value.all, color: '#1E6FE0', bg: 'rgba(30, 111, 224, 0.09)', icon: 'invoice', type: 0 },
+	{ id: 'pending', title: '待处理', count: repairCounts.value.pending, color: '#F59E0B', bg: 'rgba(245, 158, 11, 0.09)', icon: 'track', type: 1 },
+	{ id: 'fixing', title: '维修中', count: repairCounts.value.fixing, color: '#0EA5E9', bg: 'rgba(14, 165, 233, 0.09)', icon: 'repair', type: 2 },
+	{ id: 'shipped', title: '已发货', count: repairCounts.value.shipped, color: '#10B981', bg: 'rgba(16, 185, 129, 0.09)', icon: 'truck', type: 3 }
+])
+
+const loadRepairCounts = async () => {
+	try {
+		const data = await getRepairList({ page: 1, size: 100 })
+		const list = Array.isArray(data) ? data : data.list
+		if (!Array.isArray(list)) return
+		repairCounts.value = list.reduce(
+			(acc, item = {}) => {
+				const status = normalizeStatus(item.statusText || item.statusName || item.status)
+				acc.all += 1
+				if (['已提交', '已寄出', '已签收', '检测中', '待报价', '待确认'].includes(status)) acc.pending += 1
+				if (status === '维修中') acc.fixing += 1
+				if (status === '已发货') acc.shipped += 1
+				return acc
+			},
+			{ all: 0, pending: 0, fixing: 0, shipped: 0 }
+		)
+	} catch (error) {
+		console.warn('load repair counts failed:', error)
+	}
+}
 
 const menus = [
-	{ icon: 'pin', title: '收货地址管理', desc: '表单形式 · 1 个默认地址', go: 'address' },
+	{ icon: 'pin', title: '收货地址管理', desc: '多地址 · 默认回寄地址', go: 'address' },
 	{ icon: 'edit', title: '投诉和建议', desc: '问题反馈 / 改进建议', go: 'feedback' },
 	{ icon: 'box', title: '我的产品', desc: '已登记 3 件设备', go: 'products' },
+	{ icon: 'invoice', title: '发票与开票', desc: '申请开票 / 下载电子发票', go: 'invoices' },
 	{ icon: 'shield', title: '保修政策', desc: '三重保修条款', go: 'warranty' },
 	{ icon: 'phone', title: '联系我们', desc: '在线客服 / 服务热线 / 地址', go: 'contact' }
 ]
@@ -139,13 +182,14 @@ const routes = {
 	home: '/pages/index/index',
 	company: '/pages/company/index',
 	mine: '/pages/mine/index',
-	orders: '/pages/orders/index',
+	orders: '/pages/index/index?module=orders',
 	address: '/pages/address/index',
-	feedback: '/pages/feedback/index',
-	products: '/pages/products/index',
-	'guide-invoice': '/pages/guide/invoice',
-	warranty: '/pages/warranty/index',
-	contact: '/pages/contact/index'
+	feedback: '/pages/index/index?module=feedback',
+	products: '/pages/index/index?module=products',
+	invoices: '/pages/index/index?module=invoices',
+	'guide-invoice': '/pages/index/index?module=guide-invoice',
+	warranty: '/pages/index/index?module=warranty',
+	contact: '/pages/index/index?module=contact'
 }
 
 const toggleLogin = () => {
@@ -156,8 +200,11 @@ const toggleLogin = () => {
 			content: '确定要退出登录吗？',
 			success: (res) => {
 				if (res.confirm) {
+					uni.removeStorageSync('token')
 					uni.removeStorageSync('isLoggedIn')
 					uni.removeStorageSync('userInfo')
+					currentUser.value = {}
+					repairCounts.value = { all: 0, pending: 0, fixing: 0, shipped: 0 }
 					logged.value = false
 					uni.showToast({ title: '已退出登录', icon: 'success' })
 				}
@@ -505,14 +552,15 @@ const goOrder = (type) => {
 }
 
 .status-grid {
-	padding: 36rpx 12rpx 32rpx;
+	padding: 36rpx 20rpx 32rpx;
 	display: flex;
 	align-items: flex-start;
-	justify-content: space-around;
+	justify-content: space-between;
 }
 
 .status-item {
 	position: relative;
+	width: 25%;
 	display: flex;
 	flex-direction: column;
 	align-items: center;
@@ -521,12 +569,12 @@ const goOrder = (type) => {
 
 .status-icon {
 	position: relative;
-	width: 84rpx;
-	height: 84rpx;
+	width: 88rpx;
+	height: 88rpx;
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	border-radius: 24rpx;
+	border-radius: 26rpx;
 }
 
 .badge {
@@ -813,114 +861,4 @@ const goOrder = (type) => {
 	transform: rotate(45deg);
 }
 
-.bottom-tabbar {
-	position: fixed;
-	left: 0;
-	right: 0;
-	bottom: 0;
-	z-index: 40;
-	height: 128rpx;
-	padding: 16rpx 38rpx 36rpx;
-	display: flex;
-	align-items: flex-start;
-	justify-content: space-around;
-	border-top: 2rpx solid #E4ECF7;
-	background: #FFFFFF;
-	box-sizing: border-box;
-}
-
-.tab-item {
-	min-width: 112rpx;
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	gap: 4rpx;
-	color: #94A3B8;
-	font-size: 21rpx;
-	line-height: 1.2;
-}
-
-.tab-item.active {
-	color: #1E6FE0;
-	font-weight: 600;
-}
-
-.tab-icon {
-	position: relative;
-	width: 48rpx;
-	height: 48rpx;
-	color: currentColor;
-}
-
-.tab-icon::before,
-.tab-icon::after,
-.tab-icon view {
-	content: "";
-	position: absolute;
-	box-sizing: border-box;
-}
-
-.tab-home::before {
-	left: 8rpx;
-	top: 20rpx;
-	width: 32rpx;
-	height: 22rpx;
-	border: 4rpx solid currentColor;
-	border-top: none;
-	border-radius: 0 0 5rpx 5rpx;
-}
-
-.tab-home::after {
-	left: 7rpx;
-	top: 9rpx;
-	width: 34rpx;
-	height: 34rpx;
-	border-left: 4rpx solid currentColor;
-	border-top: 4rpx solid currentColor;
-	transform: rotate(45deg);
-}
-
-.tab-home view {
-	left: 19rpx;
-	top: 30rpx;
-	width: 10rpx;
-	height: 12rpx;
-	background: currentColor;
-}
-
-.tab-company::before {
-	left: 8rpx;
-	top: 7rpx;
-	width: 32rpx;
-	height: 36rpx;
-	border: 4rpx solid currentColor;
-	border-radius: 5rpx;
-}
-
-.tab-company::after {
-	left: 16rpx;
-	top: 16rpx;
-	width: 5rpx;
-	height: 5rpx;
-	background: currentColor;
-	box-shadow: 12rpx 0 0 currentColor, 0 12rpx 0 currentColor, 12rpx 12rpx 0 currentColor, 6rpx 24rpx 0 currentColor;
-}
-
-.tab-mine::before {
-	left: 15rpx;
-	top: 7rpx;
-	width: 18rpx;
-	height: 18rpx;
-	border: 4rpx solid currentColor;
-	border-radius: 999rpx;
-}
-
-.tab-mine::after {
-	left: 8rpx;
-	top: 30rpx;
-	width: 32rpx;
-	height: 16rpx;
-	border: 4rpx solid currentColor;
-	border-bottom: none;
-	border-radius: 24rpx 24rpx 0 0;
-}
+</style>

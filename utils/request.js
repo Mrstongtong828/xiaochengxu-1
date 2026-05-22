@@ -1,4 +1,6 @@
-export const baseURL = 'https://api.cisco-d.com/api/v1'
+const envBaseURL = import.meta.env && import.meta.env.VITE_API_BASE_URL
+
+export const baseURL = envBaseURL || 'https://api.cisco-d.com/api/v1'
 
 const isAbsoluteUrl = (url = '') => /^https?:\/\//i.test(url)
 
@@ -27,8 +29,10 @@ export default function request(options = {}) {
 					return
 				}
 
-				if (body.code === 1004) {
+				if (res.statusCode === 401 || [401, 1004, 100401].includes(Number(body.code))) {
 					uni.removeStorageSync('token')
+					uni.removeStorageSync('userInfo')
+					uni.removeStorageSync('isLoggedIn')
 				}
 
 				reject(body.message ? body : { message: '请求失败', data: body })

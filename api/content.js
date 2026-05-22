@@ -69,7 +69,13 @@ export const getRepairDetail = (orderId) => request({ url: '/repair/detail', dat
 
 export const queryPackageStatus = (data = {}) => request({ url: '/package/query', data })
 
-export const getAddressList = () => request({ url: '/address/list' })
+export const applyInvoice = (data) => request({ url: '/invoice/apply', method: 'POST', data })
+
+export const getInvoiceList = (data = {}) => request({ url: '/invoice/list', data })
+
+export const getProductList = (data = {}) => request({ url: '/product/list', data })
+
+// export const getAddressList = () => request({ url: '/address/list' })
 
 export const addAddress = (data) => request({ url: '/address/add', method: 'POST', data })
 
@@ -77,7 +83,7 @@ export const updateAddress = (data) => request({ url: '/address/update', method:
 
 export const deleteAddress = (addressId) => request({ url: '/address/delete', method: 'DELETE', data: { addressId } })
 
-export const setDefaultAddress = (addressId) => request({ url: '/address/set-default', method: 'PUT', data: { addressId } })
+// export const setDefaultAddress = (addressId) => request({ url: '/address/set-default', method: 'PUT', data: { addressId } })
 
 export const addComplaint = (data) => request({ url: '/complaint/add', method: 'POST', data })
 

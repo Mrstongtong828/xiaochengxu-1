@@ -25,3 +25,7 @@ export function callCloudFunction(name, data = {}) {
     })
   })
 }
+
+export function importCloudObject(name) {
+  return uniCloud.importObject(name)
+}

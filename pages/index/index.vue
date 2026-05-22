@@ -33,10 +33,6 @@
 							<input v-model="product.name" placeholder="请输入" placeholder-class="input-placeholder" />
 						</view>
 						<view class="repair-field">
-							<text><text class="required-star">*</text>产品型号</text>
-							<input v-model="product.model" placeholder="请输入" placeholder-class="input-placeholder" />
-						</view>
-						<view class="repair-field">
 							<text><text class="required-star">*</text>产品序列号</text>
 							<input v-model="product.serial" placeholder="请输入" placeholder-class="input-placeholder" />
 						</view>
@@ -50,7 +46,10 @@
 							</picker>
 						</view>
 						<view class="repair-field voucher-field tap" @click="openVoucherPicker(index)">
-							<text>购买凭证</text>
+							<view class="field-label-wrap">
+								<text>购买凭证</text>
+								<text class="field-optional">选填</text>
+							</view>
 							<view class="voucher-status">
 								<text v-if="product.voucherList && product.voucherList.length" class="voucher-count">{{ product.voucherList.length }} 张已上传</text>
 								<view v-else class="upload-box voucher-upload">
@@ -102,21 +101,18 @@
 				</view>
 				<view class="blue-tip">请妥善包装好设备，顺丰取件请在快递员到达后提供运单号。</view>
 				<view class="repair-form-card">
-					<view class="repair-field">
+					<view class="repair-field select-row tap" @click="showLogisticsPicker = true">
 						<text><text class="required-star">*</text>物流公司</text>
-						<input v-model="repairForm.logisticsCompany" placeholder="请选择物流公司" placeholder-class="input-placeholder" />
+						<text class="select-value">{{ repairForm.logisticsCompany || '请选择物流公司' }}</text>
 						<view class="field-arrow"></view>
 					</view>
 					<view class="repair-field">
 						<text><text class="required-star">*</text>运单号</text>
 						<input v-model="repairForm.trackingNo" placeholder="请输入运单号" placeholder-class="input-placeholder" />
-						<view class="scan-icon"></view>
-					</view>
-					<view class="repair-field last">
-						<text>寄送方式</text>
-						<view class="radio-row">
-							<view class="radio-item on"><view></view><text>顺丰取件</text></view>
-							<view class="radio-item"><view></view><text>自行寄送</text></view>
+						<view class="scan-icon tap" @click="scanTrackingNo">
+							<view class="scan-corner"></view>
+							<view class="scan-corner"></view>
+							<view class="scan-corner"></view>
 						</view>
 					</view>
 				</view>
@@ -148,41 +144,69 @@
 				<view class="module-section-head single">
 					<text>联系我们</text>
 				</view>
-				<view class="contact-mini-list">
-					<button class="contact-mini-card tap" open-type="contact" @click="openCustomerService">
-						<view class="contact-mini-icon"><view class="glyph glyph-chat"><view class="glyph-extra"></view></view></view>
-						<view class="contact-mini-copy">
-							<text>在线客服</text>
-							<text>8:00 to 21:00（节假日除外）</text>
+				<view class="contact-card-wrap">
+					<view class="contact-card-item">
+						<view class="contact-icon-wrap">
+							<view class="glyph glyph-chat"><view class="glyph-extra"></view></view>
 						</view>
-						<view class="chevron"></view>
-					</button>
-					<view class="contact-mini-card tap" @click="makePhoneCall">
-						<view class="contact-mini-icon"><view class="glyph glyph-phone"><view class="glyph-extra"></view></view></view>
-						<view class="contact-mini-copy">
-							<text>服务热线</text>
-							<text class="brand-text">13929198537</text>
+						<view class="contact-content">
+							<text class="contact-title">在线客服</text>
+							<text class="contact-desc">（8:00至21:00 节假日除外）</text>
+						</view>
+					</view>
+					<view class="contact-card-item contact-card-divider">
+						<view class="contact-icon-wrap phone-icon">
+							<view class="glyph glyph-phone"><view class="glyph-extra"></view></view>
+						</view>
+						<view class="contact-content">
+							<text class="contact-title">服务热线（微信同号）</text>
+							<text class="contact-desc">（8:00至21:00）</text>
+							<view class="contact-phone-list">
+								<view class="phone-item tap" @click="callPhone('13929945417')">
+									<text class="phone-label">售后技术:</text>
+									<text class="phone-number">13929945417</text>
+									<text class="phone-region">（全国）</text>
+								</view>
+								<view class="phone-item tap" @click="callPhone('13929924257')">
+									<text class="phone-label">售后客服1:</text>
+									<text class="phone-number">13929924257</text>
+									<text class="phone-region">（华东,湖北,湖南,海南）</text>
+								</view>
+								<view class="phone-item tap" @click="callPhone('13927263445')">
+									<text class="phone-label">售后客服2:</text>
+									<text class="phone-number">13927263445</text>
+									<text class="phone-region">（东北,华北,西北,西南）</text>
+								</view>
+								<view class="phone-item tap" @click="callPhone('13927700164')">
+									<text class="phone-label">售后客服3:</text>
+									<text class="phone-number">13927700164</text>
+									<text class="phone-region">（广东,河南）</text>
+								</view>
+								<view class="phone-item tap" @click="callPhone('+8613929924346')">
+									<text class="phone-label">国际售后技术:</text>
+									<text class="phone-number">+86 13929924346</text>
+									<text class="phone-region">（International after-sales technology）</text>
+								</view>
+							</view>
 						</view>
 					</view>
 				</view>
-				<view class="receiver-card repair-receiver">
-					<view class="receiver-head"><view class="glyph glyph-pin glyph-pin-title"><view class="glyph-extra"></view></view><text>收件信息</text></view>
-					<view v-for="item in receiver" :key="item.label" class="receiver-row">
-						<view class="receiver-line">
-							<view class="receiver-text"><text class="receiver-label">{{ item.label }}</text><text class="receiver-value">{{ item.value }}</text></view>
-							<view class="copy-button tap" @click="copyOne(item.value, item.label)"><view class="mini-icon mini-copy"></view></view>
-						</view>
-					</view>
-					<view class="copy-all repair-copy tap" @click="copyAll">
-						<view class="mini-icon mini-check mini-check-white"></view>
-						<text>{{ copied === 'all' ? '已复制' : '一键复制以上收件信息' }}</text>
-					</view>
-				</view>
-				<button class="repair-fab repair-fab-chat tap" open-type="contact" @click="openCustomerService"><view class="glyph glyph-chat"><view class="glyph-extra"></view></view></button>
-				<view class="repair-fab repair-fab-phone tap" @click="makePhoneCall"><view class="glyph glyph-phone"><view class="glyph-extra"></view></view></view>
 				<view class="repair-bottom-bar">
 					<view class="bottom-more tap" @click="showRepairTools = true"><view></view><text>工具</text></view>
-					<view class="bottom-submit tap" @click="submitRepair">立即提交报修</view>
+					<view class="bottom-submit tap" :class="{ disabled: repairSubmitting }" @click="submitRepair">{{ repairSubmitting ? '提交中...' : '立即提交报修' }}</view>
+				</view>
+
+				<view v-if="showLogisticsPicker" class="sheet-mask" @click="showLogisticsPicker = false"></view>
+				<view v-if="showLogisticsPicker" class="choice-sheet">
+					<view class="choice-head">
+						<text class="tap" @click="showLogisticsPicker = false">取消</text>
+						<text>选择物流公司</text>
+						<text></text>
+					</view>
+					<view v-for="item in logisticsList" :key="item.value" class="choice-row tap" @click="selectLogistics(item)">
+						<text>{{ item.label }}</text>
+						<view v-if="repairForm.logisticsCompany === item.value" class="mini-icon mini-check"></view>
+					</view>
 				</view>
 			</view>
 
@@ -192,7 +216,7 @@
 				<text class="success-desc">工程师将于 30 分钟内联系您，请保持手机畅通</text>
 				<view class="success-card">
 					<view class="success-row"><text>工单号</text><text class="copy-link tap" @click="copyOne(submittedOrderId, '工单号')">复制</text></view>
-					<text class="success-no">{{ submittedOrderId }}</text>
+					<text class="success-no">{{ submittedOrderId || '工单号待后台返回' }}</text>
 					<view class="success-grid">
 						<view><text>预计响应</text><text>30 分钟内</text></view>
 						<view><text>物流方式</text><text>顺丰到付</text></view>
@@ -208,16 +232,16 @@
 				<view class="track-search-wrap">
 					<view class="track-search">
 						<view class="glyph glyph-search glyph-search-small"><view class="glyph-extra"></view></view>
-						<input placeholder="输入工单号 / 产品序列号查询" placeholder-class="input-placeholder" />
+						<input v-model.trim="trackSearchKeyword" placeholder="输入工单号 / 产品序列号查询" placeholder-class="input-placeholder" confirm-type="search" />
 					</view>
 				</view>
-				<view class="progress-tabs-line">
+				<scroll-view class="progress-tabs-line progress-tabs-compact" scroll-x show-scrollbar="false" enhanced>
 					<view v-for="item in progressTabs" :key="item" class="progress-tab tap" :class="{ on: activeTrackTab === item }" @click="activeTrackTab = item">
 						<text>{{ item }}</text>
 					</view>
-				</view>
-				<view class="module-list">
-					<view v-for="order in filteredTrackOrders" :key="order.id" class="track-card tap" @click="openTrackDetail(order)">
+				</scroll-view>
+				<view class="module-list track-list">
+					<view v-for="order in filteredTrackOrders" :key="order.id" class="track-card track-card-classic tap" @click="openTrackDetail(order)">
 						<view class="track-card-head">
 							<view>
 								<text class="muted-line">工单 {{ order.id }}</text>
@@ -236,7 +260,7 @@
 							<text>查看详情 →</text>
 						</view>
 					</view>
-					<view v-if="!filteredTrackOrders.length" class="empty-hint compact">当前状态暂无工单记录。</view>
+					<view v-if="!filteredTrackOrders.length" class="empty-hint compact track-empty">当前状态暂无工单记录。</view>
 				</view>
 			</view>
 
@@ -244,20 +268,31 @@
 				<view class="package-hero">
 					<view class="package-hero-icon"><view class="glyph glyph-box"><view class="glyph-extra"></view></view></view>
 					<view>
-						<text>查包裹是否已到仓</text>
-						<text>输入快递单号，我们会查询内部收件记录和处理状态。</text>
+						<text>确认签收与入库进度</text>
+						<text>输入快递单号，即可查看签收、入库和后续处理记录。</text>
 					</view>
 				</view>
-				<view class="blue-tip package-tip">为了保护客户隐私，建议同时填写寄件手机号后四位。后台收到包裹并录入快递单号后，这里会显示最新处理进度。</view>
 				<view class="repair-form-card">
 					<view class="repair-field">
 						<text><text class="required-star">*</text>快递单号</text>
 						<input v-model="packageQuery.trackingNo" placeholder="请输入快递单号" placeholder-class="input-placeholder" confirm-type="search" @confirm="queryPackage" />
+						<view class="field-actions">
+							<view class="field-action-icon package-action-icon package-scan-action tap" @click="scanPackageCode">
+								<view class="glyph glyph-scan"><view class="glyph-extra"></view></view>
+							</view>
+							<view class="field-action-icon package-action-icon package-paste-action tap" @click="pastePackageCode">
+								<view class="glyph glyph-paste"><view class="glyph-extra"></view></view>
+							</view>
+						</view>
 					</view>
 					<view class="repair-field last">
 						<text>手机号后四位</text>
-						<input v-model="packageQuery.phoneLast4" placeholder="用于核验，选填" placeholder-class="input-placeholder" type="number" maxlength="4" confirm-type="search" @confirm="queryPackage" />
+						<input v-model="packageQuery.phoneLast4" placeholder="查询完整轨迹时填写" placeholder-class="input-placeholder" type="number" maxlength="4" confirm-type="search" @confirm="queryPackage" />
 					</view>
+				</view>
+				<view class="package-privacy-note">
+					<text>隐私保护</text>
+					<text>填写收件人手机后四位后，可查看更完整的物流轨迹。</text>
 				</view>
 				<view class="primary-button tap save-button" :class="{ disabled: packageQueryLoading }" @click="queryPackage">{{ packageQueryLoading ? '查询中...' : '立即查询' }}</view>
 				<view v-if="packageQueryResult" class="package-result-card">
@@ -298,6 +333,125 @@
 				<view v-else-if="packageQuerySearched" class="empty-hint compact package-empty">暂未查到这票包裹。请确认快递单号是否正确，或等我们签收录入后再查询。</view>
 			</view>
 
+			<view v-else-if="activeModule === 'invoices'" class="module-content invoice-module">
+				<view class="invoice-hero">
+					<view class="invoice-hero-icon"><view class="glyph glyph-invoice"><view class="glyph-extra"></view></view></view>
+					<view>
+						<text>电子发票自助办理</text>
+						<text>维修完成后可在线申请，支持查看申请、审核、开票状态与电子发票链接。</text>
+					</view>
+				</view>
+				<view class="invoice-status-board">
+					<view v-for="item in invoiceFlow" :key="item.title">
+						<text>{{ item.title }}</text>
+						<text>{{ item.desc }}</text>
+					</view>
+				</view>
+
+				<view v-if="!activeInvoiceOrderId" class="progress-tabs-line invoice-tabs">
+					<view v-for="item in invoiceTabs" :key="item" class="progress-tab tap" :class="{ on: item.startsWith(activeInvoiceTab) }" @click="activeInvoiceTab = item.split(' ')[0]">
+						<text>{{ item }}</text>
+					</view>
+				</view>
+
+				<view v-if="activeInvoiceOrderId" class="invoice-apply">
+					<view class="invoice-form-head">
+						<view>
+							<text>申请开票</text>
+							<text>工单 {{ activeInvoiceOrder.id }} · {{ activeInvoiceOrder.price }}</text>
+						</view>
+						<text class="tap" @click="cancelInvoiceApply">更换工单</text>
+					</view>
+					<view class="repair-form-card invoice-form-card">
+						<view class="repair-field select-row">
+							<text>发票类型</text>
+							<text class="select-value">{{ invoiceForm.invoiceType }}</text>
+						</view>
+						<view class="invoice-type-row">
+							<view v-for="item in invoiceTitleTypes" :key="item.value" class="tap" :class="{ on: invoiceForm.titleType === item.value }" @click="invoiceForm.titleType = item.value">
+								<text>{{ item.label }}</text>
+								<text>{{ item.desc }}</text>
+							</view>
+						</view>
+						<view class="repair-field">
+							<text><text class="required-star">*</text>发票抬头</text>
+							<input v-model="invoiceForm.title" placeholder="请输入发票抬头" placeholder-class="input-placeholder" />
+						</view>
+						<view v-if="invoiceForm.titleType === 'company'" class="repair-field">
+							<text><text class="required-star">*</text>税号</text>
+							<input v-model="invoiceForm.taxNo" placeholder="请输入纳税人识别号" placeholder-class="input-placeholder" />
+						</view>
+						<view class="repair-field">
+							<text><text class="required-star">*</text>接收邮箱</text>
+							<input v-model="invoiceForm.email" placeholder="用于接收电子发票" placeholder-class="input-placeholder" />
+						</view>
+						<view class="repair-field last">
+							<text>备注</text>
+							<input v-model="invoiceForm.remark" placeholder="选填，如开票特殊说明" placeholder-class="input-placeholder" />
+						</view>
+					</view>
+					<view class="invoice-tip">
+						<text>当前版本支持电子普通发票。若需要专用发票或纸质票，请提交后联系客服协助处理。</text>
+					</view>
+					<view class="primary-button tap save-button" :class="{ disabled: invoiceSubmitting }" @click="submitInvoiceApply">{{ invoiceSubmitting ? '提交中...' : '确认提交' }}</view>
+				</view>
+
+				<view v-else-if="activeInvoiceTab === '待开票'" class="invoice-list">
+					<view class="invoice-flow-card">
+						<view v-for="(item, index) in invoiceFlow" :key="item.title" class="invoice-flow-step">
+							<view>{{ index + 1 }}</view>
+							<text>{{ item.title }}</text>
+						</view>
+					</view>
+					<view v-for="order in invoiceTodoOrders" :key="order.id" class="invoice-order-card">
+						<view class="invoice-order-head">
+							<view>
+								<text class="muted-line">工单 {{ order.id }}</text>
+								<text>{{ order.model }}</text>
+							</view>
+							<text :class="['tag', 'tag-' + getInvoiceMeta(order).tone]">{{ getInvoiceMeta(order).label }}</text>
+						</view>
+					<view class="invoice-order-meta">
+							<view><text>维修金额</text><text>{{ order.price }}</text></view>
+							<view><text>报修日期</text><text>{{ order.date }}</text></view>
+							<view><text>开票阶段</text><text>{{ getInvoiceMeta(order).stage }}</text></view>
+							<view><text>电子链接</text><text>{{ order.invoiceUrl ? '已生成' : '待开具' }}</text></view>
+						</view>
+						<view class="invoice-order-actions">
+							<view class="ghost-button tap" @click="openOrderDetail(order)">查看工单</view>
+							<view class="primary-button tap" :class="{ disabled: getInvoiceStatusKey(order) !== 'available' }" @click="startInvoiceApply(order)">
+								{{ getInvoiceStatusKey(order) === 'available' ? '申请开票' : getInvoiceMeta(order).label }}
+							</view>
+						</view>
+					</view>
+					<view v-if="!invoiceTodoOrders.length" class="empty-hint compact">暂无可申请开票的订单。</view>
+				</view>
+
+				<view v-else class="invoice-list">
+					<view v-for="order in invoiceIssuedOrders" :key="order.id" class="invoice-issued-card">
+						<view class="invoice-issued-ribbon">电子发票</view>
+						<view class="invoice-issued-head">
+							<view>
+								<text>{{ order.invoiceTitle || '发票抬头待同步' }}</text>
+								<text>工单 {{ order.id }}</text>
+							</view>
+							<text>{{ order.price }}</text>
+						</view>
+						<view class="invoice-issued-info">
+							<view><text>发票号码</text><text>{{ order.invoiceNo || '待同步' }}</text></view>
+							<view><text>开票日期</text><text>{{ order.invoiceDate || '待同步' }}</text></view>
+							<view><text>开票状态</text><text>{{ getInvoiceMeta(order).stage }}</text></view>
+							<view><text>电子链接</text><text>{{ order.invoiceUrl ? '已生成' : '待同步' }}</text></view>
+						</view>
+						<view class="invoice-order-actions">
+							<view class="ghost-button tap" @click="openOrderDetail(order)">查看工单</view>
+							<view class="primary-button tap" @click="copyInvoiceLink(order)">复制发票链接</view>
+						</view>
+					</view>
+					<view v-if="!invoiceIssuedOrders.length" class="empty-hint compact">暂无已开具的电子发票。</view>
+				</view>
+			</view>
+
 			<view v-else-if="activeModule === 'order-detail'" class="module-content">
 				<view class="detail-hero">
 					<view class="detail-hero-top">
@@ -312,10 +466,10 @@
 				</view>
 				<view class="module-section-head single"><text>进度时间线</text></view>
 				<view class="timeline-card">
-					<view v-for="(item, index) in orderTimeline" :key="item.title" class="detail-timeline-row">
+					<view v-for="(item, index) in detailTimeline" :key="item.title + index" class="detail-timeline-row">
 						<view class="detail-timeline-pin" :class="{ pending: item.pending }">
 							<view></view>
-							<view v-if="index < orderTimeline.length - 1"></view>
+							<view v-if="index < detailTimeline.length - 1"></view>
 						</view>
 						<view class="detail-timeline-copy">
 							<view>
@@ -326,24 +480,79 @@
 						</view>
 					</view>
 				</view>
+				<view class="module-section-head single"><text>报价确认与维修授权</text></view>
+				<view class="quote-card">
+					<view class="quote-head">
+						<view>
+							<text>检测报价单</text>
+							<text>{{ getQuoteMeta(detailOrder).desc }}</text>
+						</view>
+						<text :class="['tag', 'tag-' + getQuoteMeta(detailOrder).tone]">{{ getQuoteMeta(detailOrder).label }}</text>
+					</view>
+					<view v-if="detailQuoteItems.length" class="quote-items">
+						<view v-for="(item, index) in detailQuoteItems" :key="item.name + index" class="quote-item-row">
+							<view class="quote-item-main">
+								<text>{{ item.name }}</text>
+								<text>{{ item.desc || item.partName || '按检测结果维修' }}</text>
+							</view>
+							<view class="quote-item-fees">
+								<text>配件 {{ formatMoney(item.partsFee) }}</text>
+								<text>工时 {{ formatMoney(item.laborFee) }}</text>
+							</view>
+						</view>
+					</view>
+					<view v-else class="quote-empty">
+						<text>设备签收并完成检测后，会在这里展示维修项目、配件、工时和总价。</text>
+					</view>
+					<view v-if="detailQuoteItems.length" class="quote-summary">
+						<view><text>配件费</text><text>{{ formatMoney(detailOrder.partsFee) }}</text></view>
+						<view><text>工时费</text><text>{{ formatMoney(detailOrder.laborFee) }}</text></view>
+						<view class="quote-total"><text>合计</text><text>{{ formatMoney(getQuoteTotal(detailOrder)) }}</text></view>
+					</view>
+					<view class="authorization-panel">
+						<view>
+							<text>维修授权</text>
+							<text>{{ getAuthorizationMeta(detailOrder).desc }}</text>
+						</view>
+						<text :class="['tag', 'tag-' + getAuthorizationMeta(detailOrder).tone]">{{ getAuthorizationMeta(detailOrder).label }}</text>
+					</view>
+					<view v-if="canConfirmRepair(detailOrder)" class="primary-button tap detail-action-button" @click="confirmRepairAuthorization(detailOrder)">确认报价并授权维修</view>
+				</view>
+				<view class="module-section-head single"><text>支付/对公转账凭证</text></view>
+				<view class="payment-card">
+					<view class="payment-head">
+						<view>
+							<text>费用留痕</text>
+							<text>{{ getPaymentMeta(detailOrder).desc }}</text>
+						</view>
+						<text :class="['tag', 'tag-' + getPaymentMeta(detailOrder).tone]">{{ getPaymentMeta(detailOrder).label }}</text>
+					</view>
+					<view class="payment-account">
+						<view><text>应付金额</text><text>{{ detailQuoteItems.length ? formatMoney(getQuoteTotal(detailOrder)) : '待报价' }}</text></view>
+						<view><text>支付方式</text><text>对公转账 / 线下支付</text></view>
+					</view>
+					<view v-if="detailPaymentProofs.length" class="payment-proof-grid">
+						<view v-for="(proof, index) in detailPaymentProofs" :key="proof.id || proof.url || index" class="payment-proof-thumb tap" @click="previewPaymentProof(index)">
+							<image class="payment-proof-image" :src="proof.url || proof.path" mode="aspectFill"></image>
+							<text>{{ proof.time || '已上传' }}</text>
+						</view>
+					</view>
+					<view v-if="canUploadPaymentProof(detailOrder)" class="ghost-button tap payment-upload-button" :class="{ disabled: paymentProofUploading }" @click="uploadPaymentProof(detailOrder)">
+						{{ paymentProofUploading ? '上传中...' : '上传转账/支付凭证' }}
+					</view>
+				</view>
 				<view class="module-section-head single"><text>发票进度</text></view>
-				<view class="info-line-card">
+				<view class="info-line-card invoice-detail-card">
 					<view class="info-line-icon invoice-bg"><view class="glyph glyph-invoice"><view class="glyph-extra"></view></view></view>
 					<view class="info-line-copy">
-						<text>增值税普通发票</text>
-						<text>桂林口腔门诊有限公司 · ￥860.00</text>
+						<text>{{ detailInvoiceOrder.invoiceType || '电子普通发票' }}</text>
+						<text>{{ getInvoiceMeta(detailInvoiceOrder).desc }}</text>
 					</view>
-					<text class="tag tag-warn">待开具</text>
-				</view>
-				<view class="module-section-head single"><text>负责工程师</text></view>
-				<view class="engineer-card">
-					<view class="engineer-avatar">王</view>
-					<view class="info-line-copy">
-						<text>王师傅</text>
-						<text>10 年高速手机维修经验</text>
+					<view class="invoice-detail-actions">
+						<text :class="['tag', 'tag-' + getInvoiceMeta(detailInvoiceOrder).tone]">{{ getInvoiceMeta(detailInvoiceOrder).label }}</text>
+						<view v-if="getInvoiceStatusKey(detailInvoiceOrder) === 'available'" class="invoice-mini-button tap" @click="handleInvoiceAction(detailInvoiceOrder)">申请开票</view>
+						<view v-else-if="getInvoiceStatusKey(detailInvoiceOrder) === 'issued'" class="invoice-mini-button tap" @click="handleInvoiceAction(detailInvoiceOrder)">查看发票</view>
 					</view>
-					<view class="circle-action"><view class="glyph glyph-chat"><view class="glyph-extra"></view></view></view>
-					<view class="circle-action primary"><view class="glyph glyph-phone"><view class="glyph-extra"></view></view></view>
 				</view>
 			</view>
 
@@ -363,7 +572,6 @@
 					<text class="survey-poster-tip">点击图片放大查看，长按可保存或识别二维码</text>
 					<view class="survey-actions">
 						<view class="survey-secondary tap" @click="closeModule">退出</view>
-						<view class="survey-primary tap" @click="go('contact')">联系客服</view>
 					</view>
 				</view>
 			</view>
@@ -535,21 +743,22 @@
 			</view>
 
 			<view v-else-if="activeModule === 'orders'" class="orders-module">
-				<view class="progress-tabs-line orders-tabs">
-					<view v-for="item in orderTabs" :key="item" class="progress-tab tap" :class="{ on: item.startsWith(activeOrdersTab) }" @click="activeOrdersTab = item.split(' ')[0]">
-						<text>{{ item }}</text>
+				<scroll-view class="progress-tabs-line orders-tabs orders-tabs-classic" scroll-x show-scrollbar="false" enhanced>
+					<view v-for="item in orderTabs" :key="item.key" class="progress-tab orders-tab-item tap" :class="{ on: item.key === activeOrdersTab }" @click="activeOrdersTab = item.key">
+						<text>{{ item.label }}</text>
+						<text class="orders-tab-count">{{ item.count }}</text>
 					</view>
-				</view>
-				<view class="module-content">
-					<view v-for="order in filteredOrderList" :key="order.id" class="order-card-mini tap" @click="openOrderDetail(order)">
-						<view>
+				</scroll-view>
+				<view class="module-content orders-content-classic">
+					<view v-for="order in filteredOrderList" :key="order.id" class="order-card-mini order-card-classic tap" @click="openOrderDetail(order)">
+						<view class="order-card-main">
 							<text class="muted-line">工单 {{ order.id }}</text>
-							<text>{{ order.model }}</text>
-							<text>报修日期 · {{ order.date }}</text>
+							<text class="order-card-title">{{ order.model }}</text>
+							<text class="order-card-date">报修日期 · {{ order.date }}</text>
 						</view>
-						<view>
-							<text :class="['tag', 'tag-' + order.tone]">{{ order.status }}</text>
-							<text>{{ order.price }}</text>
+						<view class="order-card-side">
+							<text :class="['tag', 'tag-' + getOrderStatusTone(order)]">{{ order.status }}</text>
+							<text class="order-card-price">{{ formatOrderListPrice(order) }}</text>
 						</view>
 					</view>
 					<view v-if="!filteredOrderList.length" class="empty-hint compact">当前筛选条件下没有订单。</view>
@@ -567,23 +776,60 @@
 					</view>
 					<view class="ghost-mini tap" @click="go('repair')">报修</view>
 				</view>
+				<view v-if="!productList.length" class="empty-hint compact">暂无已登记设备。后端产品接口接入后会显示真实设备与保修状态。</view>
 				<view class="dash-add tap"><text>+</text><text>添加我的产品</text></view>
 			</view>
 
 			<view v-else-if="activeModule === 'address'" class="module-content address-module">
-				<view class="repair-form-card">
-					<view class="repair-field"><text><text class="required-star">*</text>收货人</text><input v-model="addressForm.name" placeholder="请输入收货人姓名" placeholder-class="input-placeholder" /></view>
-					<view class="repair-field"><text><text class="required-star">*</text>手机号码</text><input v-model="addressForm.phone" placeholder="请输入联系电话" placeholder-class="input-placeholder" /></view>
-					<view class="repair-field"><text><text class="required-star">*</text>所在地区</text><input v-model="addressForm.region" placeholder="省 / 市 / 区" placeholder-class="input-placeholder" /><view class="field-arrow"></view></view>
-					<view class="repair-field"><text><text class="required-star">*</text>详细地址</text><input v-model="addressForm.detail" placeholder="街道 / 门牌号 / 楼层" placeholder-class="input-placeholder" /><view class="field-mini field-pin"></view></view>
-					<view class="repair-field last"><text>单位名称</text><input v-model="addressForm.unit" placeholder="诊所 / 医院 名称（选填）" placeholder-class="input-placeholder" /></view>
+				<view class="address-header">
+					<view class="address-back tap" @click="closeModule">
+						<view class="back-arrow"></view>
+					</view>
+					<view class="address-title">{{ addressForm.addressId ? '编辑收货地址' : '新增收货地址' }}</view>
+					<view class="address-placeholder"></view>
 				</view>
-				<view class="switch-card">
-					<view><text>设为默认地址</text><text>报修时将优先使用此地址</text></view>
-					<view class="switch-btn tap" :class="{ on: addressForm.def }" @click="addressForm.def = !addressForm.def"><view></view></view>
+
+				<view class="address-form">
+					<view class="address-field">
+						<text class="field-label"><text class="required-star">*</text>收货人</text>
+						<input v-model="addressForm.name" class="field-input" placeholder="请输入收货人姓名" placeholder-class="input-placeholder" />
+					</view>
+
+					<view class="address-field">
+						<text class="field-label"><text class="required-star">*</text>手机号码</text>
+						<input v-model="addressForm.phone" class="field-input" placeholder="请输入联系电话" placeholder-class="input-placeholder" type="number" />
+					</view>
+
+					<view class="address-field tap" @click="selectRegion">
+						<text class="field-label"><text class="required-star">*</text>所在地区</text>
+						<input v-model="addressForm.region" class="field-input" placeholder="请选择省 / 市 / 区" placeholder-class="input-placeholder" disabled />
+						<view class="field-arrow"></view>
+					</view>
+
+					<view class="address-field">
+						<text class="field-label"><text class="required-star">*</text>详细地址</text>
+						<input v-model="addressForm.detail" class="field-input" placeholder="街道、楼牌号等" placeholder-class="input-placeholder" />
+					</view>
+
+					<view class="address-field">
+						<text class="field-label">单位名称</text>
+						<input v-model="addressForm.unit" class="field-input" placeholder="诊所 / 医院 名称（选填）" placeholder-class="input-placeholder" />
+					</view>
 				</view>
-				<view class="primary-button tap save-button" @click="saveAddress">保存地址</view>
-				<view class="delete-button">删除地址</view>
+
+				<view class="address-switch">
+					<view class="switch-left">
+						<text class="switch-title">设为默认地址</text>
+					</view>
+					<view class="switch-btn tap" :class="{ on: addressForm.def }" @click="addressForm.def = !addressForm.def">
+						<view></view>
+					</view>
+				</view>
+
+				<view class="address-actions">
+					<view v-if="addressForm.addressId" class="address-btn address-btn-secondary tap" @click="handleDeleteAddress">删除地址</view>
+					<view class="address-btn address-btn-primary tap" @click="saveAddress">保存地址</view>
+				</view>
 			</view>
 
 			<view v-else-if="activeModule === 'feedback'" class="module-content feedback-module">
@@ -615,15 +861,39 @@
 				</view>
 				<view class="primary-button tap save-button" @click="submitFeedback">提交{{ feedbackType }}</view>
 				<text class="submit-note">提交后预计 1 至 3 个工作日内反馈结果</text>
+				<view class="feedback-history">
+					<view class="module-section-head single"><text>我的反馈单</text></view>
+					<view v-if="feedbackRecords.length">
+						<view v-for="record in feedbackRecords" :key="record.ticketNo" class="feedback-ticket-card">
+							<view class="feedback-ticket-head">
+								<view>
+									<text>{{ record.ticketNo }}</text>
+									<text>{{ record.type }} · {{ record.time }}</text>
+								</view>
+								<text :class="['tag', 'tag-' + getFeedbackMeta(record).tone]">{{ getFeedbackMeta(record).label }}</text>
+							</view>
+							<view class="feedback-ticket-meta">
+								<view><text>关联工单</text><text>{{ record.orderId || '未关联' }}</text></view>
+								<view><text>联系方式</text><text>{{ record.contact }}</text></view>
+							</view>
+							<text class="feedback-ticket-content">{{ record.content }}</text>
+							<view class="feedback-reply">
+								<text>客服回复</text>
+								<text>{{ record.reply || '已收到反馈，客服处理后会在这里同步回复。' }}</text>
+							</view>
+						</view>
+					</view>
+					<view v-else class="empty-hint compact">提交后会自动生成反馈单号，并在这里展示处理状态与客服回复。</view>
+				</view>
 			</view>
 
 			<view v-else-if="activeModule === 'login'" class="module-content login-module">
 				<view class="login-logo"><view class="glyph glyph-tooth"><view class="glyph-extra"></view></view></view>
 				<text class="login-title">欢迎使用</text>
 				<text class="login-desc">专业牙科仪器 · 全程检修服务</text>
-				<view class="wechat-login tap" @click="loginSuccess">微信一键登录</view>
-				<view class="phone-login tap" @click="loginSuccess">手机号验证码登录</view>
-				<text class="login-agree">登录即视为您同意《用户服务协议》及《隐私政策》</text>
+				<button class="wechat-login tap" open-type="getPhoneNumber" @getphonenumber="onGetPhoneNumberLogin">微信手机号授权登录</button>
+				<view class="phone-login disabled">短信验证码登录暂未开放</view>
+				<text class="login-agree">授权登录即视为您同意《用户服务协议》及《隐私政策》</text>
 			</view>
 		</view>
 
@@ -631,20 +901,8 @@
 			<view v-if="activeTab === 'home'" class="home-body">
 				<view class="brand-bar">
 					<view class="brand-left">
-						<image class="brand-logo" src="/static/new-logo.png" mode="aspectFit"></image>
-						<text class="brand-name">思科达</text>
-					</view>
-					<view class="wechat-button tap" @click="showQr = true">
-						<view class="wechat-glyph">
-							<view class="wechat-dot dot-left"></view>
-							<view class="wechat-dot dot-right"></view>
-						</view>
-					</view>
-					<view class="hotline-pill tap" @click="go('contact')">
-						<view class="glyph glyph-phone glyph-small">
-							<view class="glyph-extra"></view>
-						</view>
-						<text>热线</text>
+						<image class="brand-logo home-brand-logo" src="/static/cicada-wordmark.png" mode="aspectFit"></image>
+						<text class="home-brand-subtitle">思科达售后维修服务</text>
 					</view>
 				</view>
 
@@ -663,6 +921,12 @@
 						/>
 						<text class="search-action tap" @click="handleSearch">搜索</text>
 					</view>
+				</view>
+
+				<view class="official-follow-bar tap" @click="showQr = true">
+					<image class="official-follow-avatar" src="/static/official-account-icon.png" mode="aspectFill"></image>
+					<text class="official-follow-text">官方公众号 · 获取最新维修指南和售后政策</text>
+					<view class="official-follow-arrow"></view>
 				</view>
 
 				<view class="hero-wrap">
@@ -811,40 +1075,66 @@
 			<view v-else-if="activeTab === 'company'" class="company-body">
 				<view class="company-brand">
 					<view class="brand-left">
-						<image class="brand-logo" :src="cicadaAssets.logoMark" mode="aspectFit"></image>
-						<text class="brand-name">思科达</text>
-					</view>
-					<view class="company-tools">
-						<view class="glyph glyph-search"><view class="glyph-extra"></view></view>
-						<view class="bell-icon"></view>
+						<image class="brand-logo" :src="cicadaAssets.logoNew" mode="aspectFit"></image>
 					</view>
 				</view>
 
 				<view class="company-hero">
-					<image class="company-hero-image" :src="cicadaAssets.photoBuilding" mode="aspectFill"></image>
+					<image class="company-hero-image" :src="cicadaAssets.photoFactory" mode="aspectFill"></image>
 					<view class="company-hero-mask"></view>
-					<image class="company-hero-logo" :src="cicadaAssets.logoFull" mode="aspectFit"></image>
+					<image class="company-hero-logo" :src="cicadaAssets.logoNew" mode="aspectFit"></image>
 					<view class="company-hero-title-wrap">
-						<text class="company-hero-title">十年匠心，守护诊疗安全</text>
+						<text class="company-hero-kicker">CICADA Dental · 登煌医疗</text>
+						<text class="company-hero-title">20年专注口腔设备研发制造</text>
+						<text class="company-hero-subtitle">从光固化设备起步，持续拓展根管治疗、电动微马达、牙科手机与牙齿美白等专业产品。</text>
 					</view>
 				</view>
 
-				<text class="company-desc">我们致力于为齿科机构提供全方位的精密仪器维保服务，成为中国口腔医疗领域最值得信赖的设备管家。</text>
+				<view class="company-stats-grid">
+					<view v-for="item in companyStats" :key="item.label" class="company-stat-card">
+						<text class="company-stat-value">{{ item.value }}</text>
+						<text class="company-stat-label">{{ item.label }}</text>
+						<text class="company-stat-desc">{{ item.desc }}</text>
+					</view>
+				</view>
+
+				<view class="company-intro-card">
+					<text class="company-intro-label">公司简介</text>
+					<text v-for="item in companyIntro" :key="item" class="company-intro-text">{{ item }}</text>
+				</view>
 
 				<view class="company-section">
 					<view class="rule-title">
 						<view></view>
-						<text>核心优势</text>
+						<text>产品矩阵</text>
+					</view>
+					<view class="business-list">
+						<view v-for="(item, index) in companyProductLines" :key="item.title" class="business-card">
+							<view class="business-visual" :style="{ background: item.gradient }">
+								<view :class="['device-shape', 'device-' + (index % 3)]"></view>
+							</view>
+							<view class="business-copy">
+								<text class="business-title">{{ item.title }}</text>
+								<text class="business-desc">{{ item.desc }}</text>
+							</view>
+						</view>
+					</view>
+				</view>
+
+				<view class="company-section">
+					<view class="rule-title">
+						<view></view>
+						<text>研发与质量</text>
 					</view>
 					<view class="auth-card">
 						<view class="auth-head">
 							<view class="cert-icon"></view>
-							<text>官方授权认证</text>
+							<text>医疗器械质量体系背书</text>
 						</view>
-						<text class="auth-desc">全品类齿科大品牌原厂技术授权，使用原厂正品零部件，确保修复精度与耐用性。</text>
+						<text class="auth-desc">CICADA 产品已取得 ISO13485、CE、FDA 及国内产品注册等资质，覆盖口腔医疗设备研发、生产与合规交付关键环节。</text>
 					</view>
 					<view class="adv-grid">
-						<view v-for="item in advantages" :key="item.title" class="adv-card">
+						<view v-for="item in companyAdvantages" :key="item.title" class="adv-card">
 							<view :class="['adv-icon', 'adv-' + item.icon]"></view>
 							<text class="adv-title">{{ item.title }}</text>
 							<text class="adv-desc">{{ item.desc }}</text>
@@ -855,17 +1145,13 @@
 				<view class="company-section">
 					<view class="rule-title">
 						<view></view>
-						<text>业务范围</text>
+						<text>服务理念</text>
 					</view>
-					<view class="business-list">
-						<view v-for="(item, index) in business" :key="item.title" class="business-card">
-							<view class="business-visual" :style="{ background: item.gradient }">
-								<view :class="['device-shape', 'device-' + index]"></view>
-							</view>
-							<view class="business-copy">
-								<text class="business-title">{{ item.title }}</text>
-								<text class="business-desc">{{ item.desc }}</text>
-							</view>
+					<view class="company-service-card">
+						<text class="company-service-title">Serve Global Dental Specialist</text>
+						<text class="company-service-desc">我们服务全球牙科专业人士，不只提供设备，也重视售后支持、客户体验与临床技术交流，帮助诊所提升诊疗效率与设备使用体验。</text>
+						<view class="company-service-tags">
+							<text v-for="item in companyServiceTags" :key="item">{{ item }}</text>
 						</view>
 					</view>
 				</view>
@@ -874,8 +1160,8 @@
 					<view class="qr-image-wrap company-qr">
 						<image class="qr-image" :src="wechatInfo.qrcodeUrl" mode="aspectFill" show-menu-by-longpress></image>
 					</view>
-					<text class="follow-title">关注官方公众号</text>
-					<text class="follow-desc">获取最新的维保优惠政策、设备保养秘籍以及一键预约上门服务。</text>
+					<text class="follow-title">了解产品与售后支持</text>
+					<text class="follow-desc">长按识别二维码关注官方公众号，获取产品资料、维修保养与售后服务支持。</text>
 					<official-account class="official-account-btn"></official-account>
 				</view>
 			</view>
@@ -883,13 +1169,13 @@
 			<view v-else class="mine-body">
 				<view class="mine-hero">
 					<view class="profile-row">
-						<view class="avatar"><text>{{ logged ? '李' : '' }}</text></view>
+						<view class="avatar"><text>{{ logged ? userAvatarText : '' }}</text></view>
 						<view class="profile-copy">
-							<text class="profile-name">{{ logged ? '李医生' : '未登录' }}</text>
+							<text class="profile-name">{{ logged ? userDisplayName : '未登录' }}</text>
 							<view v-if="logged" class="profile-meta">
-								<text>桂林口腔门诊</text>
-								<text class="member-tag">高级会员</text>
-								<text class="logout-btn tap" @click="logged = false">退出</text>
+								<text>{{ userDisplayUnit }}</text>
+								<text class="member-tag">已登录</text>
+								<text class="logout-btn tap" @click="logoutLocal">退出</text>
 							</view>
 							<view v-else class="profile-meta">
 								<text>登录后查看您的维修订单</text>
@@ -941,7 +1227,7 @@
 				</view>
 
 				<view class="mine-footer">
-					<image :src="cicadaAssets.logoFull" mode="aspectFit"></image>
+					<image :src="cicadaAssets.logoNew" mode="aspectFit"></image>
 					<text>佛山思科达 · 牙医仪器检修 v1.2.0</text>
 				</view>
 			</view>
@@ -960,20 +1246,7 @@
 			<text class="side-text">思科达官网</text>
 		</view>
 
-		<view v-if="!activeModule" class="bottom-tabbar">
-			<view
-				v-for="item in tabs"
-				:key="item.id"
-				class="tab-item tap"
-				:class="{ 'tab-item-active': activeTab === item.id }"
-				@click="go(item.id)"
-			>
-				<view :class="['tab-glyph', 'tab-' + item.icon]">
-					<view class="tab-extra"></view>
-				</view>
-				<text>{{ item.label }}</text>
-			</view>
-		</view>
+		<BottomTabbar v-if="showBottomTabbar" :tabs="tabs" :active-id="activeTab" @select="go" />
 
 		<view v-if="showOfficial" class="modal-mask" @click="showOfficial = false">
 			<view class="official-modal" @click.stop>
@@ -1003,7 +1276,7 @@
 		<view v-if="showQr" class="modal-mask" @click="showQr = false">
 			<view class="qr-modal" @click.stop>
 				<text class="modal-close tap" @click="showQr = false">×</text>
-				<image class="qr-logo" :src="cicadaAssets.logoFull" mode="aspectFit"></image>
+				<image class="qr-logo" :src="cicadaAssets.logoNew" mode="aspectFit"></image>
 				<text class="qr-title">关注官方公众号</text>
 				<text class="qr-subtitle">获取最新维修指南 / 售后政策</text>
 				<view class="qr-image-wrap">
@@ -1014,7 +1287,9 @@
 						show-menu-by-longpress
 					></image>
 				</view>
-				<view class="qr-action tap" @click="showQr = false">长按识别 / 保存图片</view>
+				<view class="qr-hint">
+					<text>长按图片即可识别二维码或保存图片</text>
+				</view>
 			</view>
 		</view>
 
@@ -1048,6 +1323,8 @@
 
 <script setup>
 import { computed, onMounted, ref } from 'vue'
+import { onLoad } from '@dcloudio/uni-app'
+import BottomTabbar from '@/components/BottomTabbar.vue'
 import { cicadaAssets } from '@/config/cicada-assets'
 import {
 	getContact,
@@ -1056,6 +1333,8 @@ import {
 	getFeePolicy,
 	getGuide,
 	getRepairList,
+	getProductList,
+	applyInvoice,
 	getWechat,
 	getWarrantyPolicy,
 	queryPackageStatus,
@@ -1063,6 +1342,7 @@ import {
 	submitRepairOrder,
 	addAddress,
 	updateAddress,
+	deleteAddress,
 	addComplaint,
 	wechatLogin,
 	uploadImage,
@@ -1083,43 +1363,75 @@ const searchKeyword = ref('')
 const activeTab = ref('home')
 const activeModule = ref('')
 const previousModule = ref('')
-const logged = ref(true)
+const logged = ref(Boolean(uni.getStorageSync('token')))
+const currentUser = ref(uni.getStorageSync('userInfo') || {})
 const diagProduct = ref('')
 const diagFault = ref('')
 const diagOpen = ref('')
 const activeTrackTab = ref('全部')
 const activeOrdersTab = ref('全部')
+const trackSearchKeyword = ref('')
+const activeInvoiceTab = ref('待开票')
+const activeInvoiceOrderId = ref('')
 const trackDetailOrder = ref('')
 const orderDetailOrder = ref('')
 const packageQueryLoading = ref(false)
 const packageQuerySearched = ref(false)
+const repairSubmitting = ref(false)
+const invoiceSubmitting = ref(false)
+const paymentProofUploading = ref(false)
 const feedbackType = ref('建议')
 const feedbackContactKind = ref('phone')
 const feedbackText = ref('')
+
+const logisticsList = [
+	{ value: '顺丰快递', label: '顺丰快递' },
+	{ value: '申通快递', label: '申通快递' },
+	{ value: '中通快递', label: '中通快递' },
+	{ value: '德邦快递', label: '德邦快递' },
+	{ value: '圆通快递', label: '圆通快递' },
+	{ value: '韵达快递', label: '韵达快递' },
+	{ value: '中国邮政', label: '中国邮政' },
+	{ value: '京东快递', label: '京东快递' },
+	{ value: '极兔快递', label: '极兔快递' },
+	{ value: '菜鸟裹裹', label: '菜鸟裹裹' },
+	{ value: '信丰快递', label: '信丰快递' },
+	{ value: '其他', label: '其他' }
+]
+const showLogisticsPicker = ref(false)
 const feedbackContactValue = ref('')
 const feedbackOrderId = ref('')
+const feedbackRecords = ref([])
 const packageQuery = ref({
 	trackingNo: '',
 	phoneLast4: ''
 })
 const packageQueryResult = ref(null)
+const invoiceForm = ref({
+	invoiceType: '电子普通发票',
+	titleType: 'company',
+	title: '',
+	taxNo: '',
+	email: '',
+	remark: ''
+})
 const addressForm = ref({
 	addressId: '',
-	name: '李医生',
-	phone: '138 0013 8000',
-	region: '广西壮族自治区 / 桂林市 / 象山区',
-	detail: '中山中路 88 号 桂林口腔门诊 4 楼',
-	unit: '桂林口腔门诊',
-	def: true
+	name: '',
+	phone: '',
+	region: '',
+	detail: '',
+	unit: '',
+	def: false
 })
 const defaultRepairForm = () => ({
 	logisticsCompany: '顺丰速运',
 	trackingNo: '',
 	sendMethod: '顺丰取件',
-	receiverName: '李医生',
-	receiverPhone: '13800138000',
-	receiverAddress: '广西壮族自治区桂林市象山区中山中路 88 号 桂林口腔门诊 4 楼',
-	receiverUnit: '桂林口腔门诊'
+	receiverName: '',
+	receiverPhone: '',
+	receiverAddress: '',
+	receiverUnit: ''
 })
 const defaultRepairProduct = () => ({ 
 	id: 1, 
@@ -1133,9 +1445,12 @@ const defaultRepairProduct = () => ({
 	media: [] 
 })
 const repairDraftKey = 'repairDraft'
+const localOrderPatchKey = 'repairOrderLocalPatches'
+const feedbackRecordKey = 'feedbackRecords'
 const repairForm = ref(defaultRepairForm())
-const submittedOrderId = ref('DR-20260511-0042')
+const submittedOrderId = ref('')
 const repairProducts = ref([defaultRepairProduct()])
+const orderLocalPatches = ref({})
 
 let repairProductSeed = 1
 let repairMediaSeed = 1
@@ -1169,30 +1484,45 @@ const receiver = ref([
 	{ label: '收件地址', value: '广东省佛山市南海区狮山镇罗村广东新光源核心基地B5座五楼' }
 ])
 
-const advantages = [
-	{ icon: 'lightning', title: '极速响应', desc: '2小时内接单回复、24小时内到场检修，将诊所停工损失降至最低。' },
-	{ icon: 'microscope', title: '精密检测', desc: '引进国际领先的工业级内窥镜与频率分析仪，精准识别隐匿故障。' }
+const companyStats = [
+	{ value: '20', label: '年品牌积累', desc: '品牌发展经验' },
+	{ value: '27', label: '产品线', desc: '覆盖诊疗场景' },
+	{ value: '195', label: '出口国家', desc: '服务全球市场' },
+	{ value: '150', label: '专利成果', desc: '持续研发创新' }
 ]
 
-const business = [
-	{ title: '高低速手机维修', desc: '包含深度清理、动平衡校正、陶瓷轴承更换。', gradient: 'linear-gradient(135deg, #2C5985 0%, #6BB0CC 100%)' },
-	{ title: '综合治疗台保养', desc: '气路水路系统消毒、控制电路检修与压力调校。', gradient: 'linear-gradient(135deg, #3D6F9E 0%, #6BB0CC 100%)' },
-	{ title: '影像系统调试', desc: 'CBCT、全景机辐射校验、感光板传感器优化。', gradient: 'linear-gradient(135deg, #0A4FB8 0%, #6BB0CC 100%)' }
+const companyIntro = [
+	'CICADA Dental（思科达 / 登煌医疗）是扎根佛山的口腔医疗设备研发制造品牌。',
+	'公司从光固化设备制造起步，逐步发展为覆盖根管治疗设备、牙科手机、电动微马达、牙齿美白仪及临床辅助器械的综合口腔解决方案提供商。',
+	'我们坚持以安全与质量为核心，通过研发、制造、售后和培训协同，为牙科专业人士提供稳定、高效、易用的设备支持。'
 ]
+
+const companyAdvantages = [
+	{ icon: 'lightning', title: '研发制造', desc: '高标准研发中心，配套来自德国、日本、韩国等地的精密设备，支撑产品快速迭代。' },
+	{ icon: 'microscope', title: '质量合规', desc: '围绕医疗器械安全标准建立质量体系，产品满足国内外相关行业标准与注册要求。' }
+]
+
+const companyProductLines = [
+	{ title: '根管治疗设备', desc: '覆盖根管马达、根管测量、热牙胶充填、冲洗等临床根管治疗场景。', gradient: 'linear-gradient(135deg, #2C5985 0%, #6BB0CC 100%)' },
+	{ title: '牙科手机与电动微马达', desc: '提供高速手机、增速弯机、电动微马达等高效、低噪、稳定的动力设备。', gradient: 'linear-gradient(135deg, #3D6F9E 0%, #6BB0CC 100%)' },
+	{ title: '光固化与美白设备', desc: '以光固化灯为起点，延伸到牙齿美白仪及修复、美学相关设备。', gradient: 'linear-gradient(135deg, #0A4FB8 0%, #6BB0CC 100%)' },
+	{ title: '洁牙抛光与辅助器械', desc: '覆盖喷砂抛光、临床器械及耗材配套，满足诊所日常诊疗效率需求。', gradient: 'linear-gradient(135deg, #1D8A96 0%, #7BC9C7 100%)' }
+]
+
+const companyServiceTags = ['及时售后', '临床培训', '全球服务网络']
 
 const defaultStatusItems = [
-	{ id: 'all', title: '全部', count: 3, color: '#1E6FE0', bg: 'rgba(30, 111, 224, 0.09)', icon: 'invoice', type: 0 },
-	{ id: 'pending', title: '待处理', count: 1, color: '#F59E0B', bg: 'rgba(245, 158, 11, 0.09)', icon: 'track', type: 1 },
-	{ id: 'fixing', title: '维修中', count: 1, color: '#0EA5E9', bg: 'rgba(14, 165, 233, 0.09)', icon: 'repair', type: 2 },
-	{ id: 'shipped', title: '已发货', count: 1, color: '#10B981', bg: 'rgba(16, 185, 129, 0.09)', icon: 'truck', type: 3 },
-	{ id: 'not_invoiced', title: '未开票', count: 0, color: '#F59E0B', bg: 'rgba(245, 158, 11, 0.09)', icon: 'invoice', type: 4 },
-	{ id: 'invoiced', title: '已开票', count: 0, color: '#10B981', bg: 'rgba(16, 185, 129, 0.09)', icon: 'check', type: 5 }
+	{ id: 'all', title: '全部', count: 0, color: '#1E6FE0', bg: 'rgba(30, 111, 224, 0.09)', icon: 'invoice', type: 0 },
+	{ id: 'pending', title: '待处理', count: 0, color: '#F59E0B', bg: 'rgba(245, 158, 11, 0.09)', icon: 'track', type: 'pending' },
+	{ id: 'fixing', title: '维修中', count: 0, color: '#0EA5E9', bg: 'rgba(14, 165, 233, 0.09)', icon: 'repair', type: '维修中' },
+	{ id: 'shipped', title: '已发货', count: 0, color: '#10B981', bg: 'rgba(16, 185, 129, 0.09)', icon: 'truck', type: '已发货' }
 ]
 
 const menus = [
-	{ icon: 'pin', title: '收货地址管理', desc: '表单形式 · 1 个默认地址', go: 'address' },
+	{ icon: 'pin', title: '收货地址管理', desc: '多地址 · 默认回寄地址', go: 'address' },
 	{ icon: 'edit', title: '投诉和建议', desc: '问题反馈 / 改进建议', go: 'feedback' },
-	{ icon: 'box', title: '我的产品', desc: '已登记 3 件设备', go: 'products' },
+	{ icon: 'box', title: '我的产品', desc: '登录后查看已登记设备', go: 'products' },
+	{ icon: 'invoice', title: '发票与开票', desc: '申请开票 / 下载电子发票', go: 'invoices' },
 	{ icon: 'shield', title: '保修政策', desc: '三重保修条款', go: 'warranty' },
 	{ icon: 'phone', title: '联系我们', desc: '在线客服 / 服务热线 / 地址', go: 'contact' }
 ]
@@ -1212,9 +1542,9 @@ const tabRoutes = {
 const moduleMap = {
 	repair: { title: '立即报修', subtitle: '填写寄出信息、产品信息与寄回信息' },
 	'repair-success': { title: '提交成功', subtitle: '工程师已收到您的报修申请' },
-	track: { title: '维修进度', subtitle: '支持全部、待处理、维修中和已发货状态查询' },
+	track: { title: '维修进度', subtitle: '按标准售后节点查看维修闭环进度' },
 	'package-query': { title: '包裹查询', subtitle: '按快递单号查询是否签收和当前处理状态' },
-	'order-detail': { title: '工单详情', subtitle: '维修时间线、发票进度与负责工程师' },
+	'order-detail': { title: '工单详情', subtitle: '维修时间线与发票进度' },
 	survey: { title: '调研有礼', subtitle: '扫码参与调研，领取专属维保福利' },
 	diag: { title: '故障自查', subtitle: '选择产品类型和故障类型，查看排查建议' },
 	warranty: { title: '保修政策', subtitle: '文字形式展示保修范围、期限和注意事项' },
@@ -1223,6 +1553,7 @@ const moduleMap = {
 	'guide-repair': { title: '报修指南', subtitle: '了解寄修报修的完整流程' },
 	'guide-query': { title: '查询指南', subtitle: '查看进度查询和结果确认办法' },
 	'guide-invoice': { title: '开票指南', subtitle: '了解发票申请、抬头和寄送说明' },
+	invoices: { title: '发票与开票', subtitle: '申请开票、查看进度与复制电子发票' },
 	contact: { title: '联系我们', subtitle: '客服热线、工作时间和寄修地址' },
 	orders: { title: '维修订单', subtitle: '查看全部维修记录与处理状态' },
 	products: { title: '我的产品', subtitle: '已登记设备与保修状态' },
@@ -1235,71 +1566,34 @@ const moduleInfo = computed(() => moduleMap[activeModule.value] || {})
 const moduleHeadStyle = computed(() => ({
 	paddingTop: `${moduleHeadPaddingTop.value}rpx`
 }))
+const showBottomTabbar = computed(() => pageBootReady.value && activeModule.value !== 'survey' && activeModule.value !== 'repair')
 
-const progressTabs = ['全部', '待处理', '维修中', '已发货']
+const repairStatusFlow = ['已提交', '已寄出', '已签收', '检测中', '待报价', '待确认', '维修中', '已发货', '已完成', '已评价']
+const pendingRepairStatuses = ['已提交', '已寄出', '已签收', '检测中', '待报价', '待确认']
 
-const repairFlow = ['寄出', '签收', '检测', '维修', '回寄', '完成']
+const progressTabs = ['全部', ...repairStatusFlow]
+
+const repairFlow = ['提交', '寄出', '签收', '检测', '报价', '确认', '维修', '发货', '完成', '评价']
 
 const packageFlow = ['待签收', '已签收', '已登记', '处理中', '已关联']
 
-const trackOrders = ref([
-	{ id: 'DR-20260508-1147', model: 'NSK Ti-Max Z95L', status: '维修中', statusGroup: '维修中', tone: 'warn', reached: 4, time: '05-09 14:23' },
-	{ id: 'DR-20260420-0883', model: 'CICADA 超声洁牙机', status: '已完成', statusGroup: '已发货', tone: 'ok', reached: 5, time: '04-25 09:11' },
-	{ id: 'DR-20260315-0521', model: '根管马达 X-Smart', status: '已完成', statusGroup: '已发货', tone: 'ok', reached: 5, time: '03-20 16:48' }
-])
-
-const packageFallbackRecords = [
-	{
-		trackingNo: 'SF0987654321',
-		phoneLast4: '8000',
-		company: '顺丰速运',
-		orderId: 'DR-20260508-1147',
-		status: '已签收待检测',
-		tone: 'warn',
-		reached: 3,
-		timeline: [
-			{ title: '已签收', desc: '桂林服务中心已签收，等待工程师拆包登记。', time: '2026-05-08 16:20' },
-			{ title: '运输中', desc: '快递员派送中，请保持寄件电话畅通。', time: '2026-05-08 10:14' },
-			{ title: '客户寄出', desc: '客户通过顺丰寄出维修设备。', time: '2026-05-07 18:30' }
-		]
-	},
-	{
-		trackingNo: 'YT20260517001',
-		phoneLast4: '2317',
-		company: '圆通速递',
-		orderId: '',
-		status: '已签收待登记',
-		tone: 'muted',
-		reached: 1,
-		timeline: [
-			{ title: '已签收', desc: '仓库已签收，客服正在核对寄件信息。', time: '2026-05-17 11:08' },
-			{ title: '到达网点', desc: '快件已到达桂林七星营业部。', time: '2026-05-17 08:46' }
-		]
-	}
+const invoiceFlow = [
+	{ title: '待申请', desc: '选择已完成工单' },
+	{ title: '审核中', desc: '客服核对抬头与金额' },
+	{ title: '开票中', desc: '财务开具电子发票' },
+	{ title: '已开票', desc: '复制链接查看发票' }
 ]
 
-const orderTimeline = [
-	{ title: '物流回寄', desc: '顺丰 SF1234567890 已签收', time: '2026-05-11 09:32', pending: true },
-	{ title: '维修完成', desc: '已更换轴承组件，含密封圈与卡簧', time: '2026-05-10 16:48' },
-	{ title: '维修中', desc: '工程师：王师傅 · 故障定位完成', time: '2026-05-09 14:23' },
-	{ title: '检测完成', desc: '确认转动卡顿、轴承磨损', time: '2026-05-09 11:05' },
-	{ title: '已签收', desc: '桂林服务中心 收', time: '2026-05-08 16:20' },
-	{ title: '已寄出', desc: '顺丰快递 SF0987654321', time: '2026-05-08 10:14' }
+const invoiceTitleTypes = [
+	{ value: 'company', label: '企业单位', desc: '适合诊所 / 医院' },
+	{ value: 'personal', label: '个人', desc: '无需填写税号' }
 ]
 
-const orderList = ref([
-	{ id: 'DR-20260508-1147', model: 'NSK Ti-Max Z95L', status: '维修中', statusGroup: '维修中', tone: 'warn', price: '￥860', date: '2026-05-08' },
-	{ id: 'DR-20260420-0883', model: 'CICADA 超声洁牙机', status: '已完成', statusGroup: '已发货', tone: 'ok', price: '￥320', date: '2026-04-20' },
-	{ id: 'DR-20260315-0521', model: '根管马达 X-Smart', status: '已完成', statusGroup: '已发货', tone: 'ok', price: '￥580', date: '2026-03-15' },
-	{ id: 'DR-20260218-0212', model: '综合治疗椅（主气路）', status: '已完成', statusGroup: '已发货', tone: 'ok', price: '￥1,240', date: '2026-02-18' },
-	{ id: 'DR-20260112-0099', model: '光固化机 LED-X', status: '已取消', statusGroup: '待处理', tone: 'muted', price: '—', date: '2026-01-12' }
-])
+const trackOrders = ref([])
 
-const productList = [
-	{ title: 'NSK Ti-Max Z95L', sn: 'TZ95L-2402-0891', date: '2024-02 购入', warranty: '保修中 · 还剩 91 天', expired: false },
-	{ title: 'CICADA 超声洁牙机', sn: 'CSC-2306-7723', date: '2023-06 购入', warranty: '已过保 · 可付费维修', expired: true },
-	{ title: '根管马达 X-Smart', sn: 'XSM-2412-0103', date: '2024-12 购入', warranty: '保修中 · 还剩 561 天', expired: false }
-]
+const orderList = ref([])
+
+const productList = ref([])
 
 const diagProducts = ref([
 	{ id: 'hp', title: '高速手机/低速手机' },
@@ -1508,6 +1802,32 @@ const feedbackContacts = [
 ]
 
 const feedbackTypes = ['建议', '投诉']
+const maxRepairImageSize = 10 * 1024 * 1024
+const maxRepairVideoSize = 50 * 1024 * 1024
+const phoneRegex = /^1[3-9]\d{9}$/
+const trackingNoRegex = /^[A-Za-z0-9-]{6,32}$/
+
+const normalizePhone = (value = '') => String(value || '').replace(/\D/g, '')
+const normalizeTrackingNo = (value = '') => String(value || '').replace(/\s/g, '').trim()
+const isValidPhone = (value = '') => phoneRegex.test(normalizePhone(value))
+const isValidTrackingNo = (value = '') => trackingNoRegex.test(normalizeTrackingNo(value))
+
+const isFileTooLarge = (file = {}, limit = maxRepairImageSize) => Number(file.size || 0) > limit
+const formatFileSize = (size) => `${Math.round(size / 1024 / 1024)}MB`
+const formatMoney = (value) => {
+	if (value === undefined || value === null || value === '') return '待确认'
+	const numberValue = Number(String(value ?? '').replace(/[^\d.-]/g, ''))
+	if (!Number.isFinite(numberValue)) return '待确认'
+	return `¥${numberValue.toFixed(2)}`
+}
+
+const todayText = () => {
+	const date = new Date()
+	const pad = (num) => String(num).padStart(2, '0')
+	return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
+}
+
+const feedbackTicketNo = () => `FB-${todayText().replace(/-/g, '')}-${String(Date.now()).slice(-4)}`
 
 const toTextLines = (value) => {
 	if (Array.isArray(value)) return value.filter(Boolean).map(String)
@@ -1561,6 +1881,26 @@ const splitWorkTimes = (workTime = '') => {
 	})
 }
 
+const selectLogistics = (item) => {
+	repairForm.value.logisticsCompany = item.value
+	showLogisticsPicker.value = false
+}
+
+const scanTrackingNo = () => {
+	uni.scanCode({
+		onlyFromCamera: false,
+		scanType: ['qrCode', 'barCode'],
+		success: (res) => {
+			if (res.result) {
+				repairForm.value.trackingNo = res.result
+			}
+		},
+		fail: (err) => {
+			console.log('扫码失败:', err)
+		}
+	})
+}
+
 const normalizeQrUrl = (url) => url || cicadaAssets.qrWechat
 
 const applyContact = (data = {}) => {
@@ -1578,11 +1918,52 @@ const applyContact = (data = {}) => {
 	]
 }
 
-const statusMeta = {
-	0: { status: '待处理', statusGroup: '待处理', tone: 'muted', reached: 1 },
-	1: { status: '维修中', statusGroup: '维修中', tone: 'warn', reached: 3 },
-	2: { status: '已发货', statusGroup: '已发货', tone: 'ok', reached: 4 },
-	3: { status: '已完成', statusGroup: '已发货', tone: 'ok', reached: 5 }
+const repairStatusAliases = {
+	0: '已提交',
+	1: '维修中',
+	2: '已发货',
+	3: '已完成',
+	submitted: '已提交',
+	created: '已提交',
+	pending: '已提交',
+	sent: '已寄出',
+	mailed: '已寄出',
+	received: '已签收',
+	signed: '已签收',
+	checking: '检测中',
+	inspecting: '检测中',
+	quoted: '待报价',
+	quote_pending: '待报价',
+	waiting_quote: '待报价',
+	confirming: '待确认',
+	waiting_confirm: '待确认',
+	fixing: '维修中',
+	repairing: '维修中',
+	shipped: '已发货',
+	completed: '已完成',
+	done: '已完成',
+	reviewed: '已评价',
+	rated: '已评价',
+	cancelled: '已取消',
+	canceled: '已取消'
+}
+
+const repairStatusMeta = repairStatusFlow.reduce((acc, label, index) => {
+	acc[label] = {
+		status: label,
+		statusGroup: label,
+		tone: index < 3 ? 'muted' : index < 6 ? 'warn' : 'ok',
+		reached: index
+	}
+	return acc
+}, {
+	已取消: { status: '已取消', statusGroup: '已取消', tone: 'muted', reached: 0 }
+})
+
+const normalizeRepairStatus = (value, fallback = '已提交') => {
+	const raw = value === undefined || value === null ? '' : String(value).trim()
+	if (!raw) return fallback
+	return repairStatusAliases[raw] || repairStatusAliases[raw.toLowerCase()] || raw
 }
 
 const packageStatusMeta = {
@@ -1594,28 +1975,126 @@ const packageStatusMeta = {
 	5: { status: '已完成', tone: 'ok', reached: 4 }
 }
 
-const normalizeOrder = (item = {}) => {
-	const meta = statusMeta[item.status] || {
-		status: item.statusText || item.status || '待处理',
-		statusGroup: item.statusText || '待处理',
-		tone: 'muted',
-		reached: 1
+const formatDateTime = (value = '', sliceStart = 0, sliceEnd = 16) => {
+	if (!value) return ''
+	if (typeof value === 'number') {
+		const date = new Date(value)
+		if (Number.isNaN(date.getTime())) return ''
+		const pad = (num) => String(num).padStart(2, '0')
+		return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`.slice(sliceStart, sliceEnd)
 	}
-	const statusText = item.statusText || meta.status
-	const statusGroup = ['待处理', '维修中', '已发货'].includes(statusText) ? statusText : meta.statusGroup
+	return String(value).slice(sliceStart, sliceEnd)
+}
+
+const formatOrderListPrice = (order = {}) => {
+	const rawValue = order.totalFee || order.amount || order.price
+	if (rawValue === undefined || rawValue === null || rawValue === '') return '—'
+	const numberValue = Number(String(rawValue).replace(/[^\d.-]/g, ''))
+	if (!Number.isFinite(numberValue) || numberValue <= 0) return '—'
+	return `¥${Number.isInteger(numberValue) ? numberValue : numberValue.toFixed(2)}`
+}
+
+const getOrderStatusTone = (order = {}) => {
+	if (order.statusGroup === '维修中') return 'warn'
+	if (order.statusGroup === '已发货' || order.statusGroup === '已完成' || order.statusGroup === '已评价') return 'ok'
+	if (order.statusGroup === '已取消') return 'muted'
+	return order.tone || 'info'
+}
+
+const normalizeOrder = (item = {}) => {
+	const statusText = normalizeRepairStatus(item.statusText || item.statusName || item.status)
+	const meta = repairStatusMeta[statusText] || {
+		status: statusText,
+		statusGroup: statusText,
+		tone: 'muted',
+		reached: Math.max(0, repairStatusFlow.indexOf(statusText))
+	}
+	const orderId = item.orderNo || item.orderId || item.id || item._id || ''
+	const createTime = item.createTime || item.createdAt || item.date || ''
+	const updateTime = item.updateTime || item.updatedAt || createTime
+	const localPatch = orderLocalPatches.value[orderId] || {}
+	const merged = { ...item, ...localPatch }
+	const quoteItems = normalizeQuoteItems({ ...merged, status: statusText, statusGroup: meta.statusGroup })
+	const partsFee = Number(merged.partsFee ?? merged.materialFee ?? merged.quote?.partsFee ?? sumQuoteFee(quoteItems, 'partsFee')) || 0
+	const laborFee = Number(merged.laborFee ?? merged.workFee ?? merged.quote?.laborFee ?? sumQuoteFee(quoteItems, 'laborFee')) || 0
+	const totalFee = Number(merged.totalFee ?? merged.amount ?? merged.price ?? merged.quote?.totalFee ?? partsFee + laborFee) || 0
 
 	return {
-		id: item.orderId || item.id || '',
-		model: item.productModel || item.productName || item.model || '维修设备',
+		id: orderId,
+		model: merged.productModel || merged.productName || merged.model || merged.deviceName || '维修设备',
 		status: statusText,
-		statusGroup,
+		statusGroup: meta.statusGroup,
 		tone: meta.tone,
 		reached: meta.reached,
-		time: (item.updateTime || item.createTime || '').slice(5, 16) || item.time || '',
-		price: item.price || '—',
-		date: (item.createTime || item.date || '').slice(0, 10)
+		time: formatDateTime(updateTime, 5, 16) || merged.time || '',
+		price: merged.price || merged.amount || merged.totalFee || (totalFee ? formatMoney(totalFee) : ''),
+		date: formatDateTime(createTime, 0, 10),
+		doneTime: merged.doneTime || merged.expectedDoneTime || '待后台同步',
+		invoiceStatus: merged.invoiceStatus,
+		invoiced: merged.invoiced,
+		invoiceTitle: merged.invoiceTitle,
+		invoiceNo: merged.invoiceNo,
+		invoiceDate: merged.invoiceDate,
+		invoiceUrl: merged.invoiceUrl,
+		quoteStatus: merged.quoteStatus || merged.quote?.status || (quoteItems.length ? 'issued' : 'pending'),
+		authorizationStatus: merged.authorizationStatus || merged.authStatus || (localPatch.authorizationStatus || ''),
+		paymentStatus: merged.paymentStatus || (Array.isArray(merged.paymentProofs) && merged.paymentProofs.length ? 'uploaded' : 'pending'),
+		quoteItems,
+		partsFee,
+		laborFee,
+		totalFee,
+		paymentProofs: Array.isArray(merged.paymentProofs) ? merged.paymentProofs : [],
+		timeline: Array.isArray(merged.timeline) ? merged.timeline : []
 	}
 }
+
+const readStorage = (key, fallback) => {
+	try {
+		const value = uni.getStorageSync(key)
+		return value || fallback
+	} catch (error) {
+		console.warn('read storage fallback:', key, error)
+		return fallback
+	}
+}
+
+const writeStorage = (key, value) => {
+	try {
+		uni.setStorageSync(key, value)
+	} catch (error) {
+		console.warn('write storage fallback:', key, error)
+	}
+}
+
+const createDemoQuoteItems = (item = {}) => {
+	const isQuoteStage = ['待确认', '维修中', '已发货', '已完成', '已评价'].includes(item.statusGroup || item.status)
+	if (!isQuoteStage) return []
+	return [
+		{ name: '故障检测与清洁', desc: '拆机检测、清洁消毒与基础调试', partsFee: 0, laborFee: 80 },
+		{ name: '轴承/密封件更换', desc: '按检测结果更换磨损配件', partsFee: 180, laborFee: 120 }
+	]
+}
+
+const normalizeQuoteItems = (item = {}) => {
+	const rawItems = item.quoteItems || item.repairItems || item.quote?.items || item.quotation?.items
+	const list = Array.isArray(rawItems) && rawItems.length ? rawItems : createDemoQuoteItems(item)
+	return list.map((row = {}) => ({
+		name: row.name || row.title || row.projectName || '维修项目',
+		desc: row.desc || row.description || row.remark || '',
+		partsFee: Number(row.partsFee ?? row.partFee ?? row.materialFee ?? row.partsAmount ?? 0) || 0,
+		laborFee: Number(row.laborFee ?? row.workFee ?? row.serviceFee ?? row.laborAmount ?? 0) || 0
+	}))
+}
+
+const sumQuoteFee = (items = [], key) => items.reduce((total, item) => total + (Number(item[key]) || 0), 0)
+
+const normalizeProduct = (item = {}) => ({
+	title: item.title || item.name || item.productName || item.model || '已登记设备',
+	sn: item.sn || item.serial || item.productSerial || item.id || '',
+	date: item.buyDate || item.purchaseDate || item.date || '',
+	warranty: item.warrantyText || item.warranty || item.warrantyStatus || '保修信息待同步',
+	expired: Boolean(item.expired || item.isExpired)
+})
 
 const normalizePackageTimeline = (timeline = []) => {
 	if (!Array.isArray(timeline) || !timeline.length) {
@@ -1651,16 +2130,6 @@ const normalizePackageResult = (data = {}) => {
 	}
 }
 
-const findLocalPackageRecord = (trackingNo, phoneLast4 = '') => {
-	const normalizedNo = String(trackingNo).trim().toUpperCase()
-	const normalizedPhone = String(phoneLast4).trim()
-	return packageFallbackRecords.find((item) => {
-		const noMatched = item.trackingNo.toUpperCase() === normalizedNo
-		const phoneMatched = !normalizedPhone || !item.phoneLast4 || item.phoneLast4 === normalizedPhone
-		return noMatched && phoneMatched
-	})
-}
-
 const queryPackage = async () => {
 	if (packageQueryLoading.value) return
 
@@ -1682,17 +2151,45 @@ const queryPackage = async () => {
 		packageQueryResult.value = res ? normalizePackageResult(res) : null
 		packageQuerySearched.value = true
 	} catch (error) {
-		console.warn('package query fallback:', error)
-		const localRecord = findLocalPackageRecord(trackingNo, packageQuery.value.phoneLast4)
-		if (localRecord) {
-			packageQueryResult.value = normalizePackageResult(localRecord)
-		} else {
-			packageQuerySearched.value = true
-			uni.showToast({ title: '包裹查询接口未开放', icon: 'none' })
-		}
+		console.warn('package query failed:', error)
+		packageQuerySearched.value = true
+		uni.showToast({ title: error.message || '暂未查到包裹记录', icon: 'none' })
 	} finally {
 		packageQueryLoading.value = false
 	}
+}
+
+const scanPackageCode = () => {
+	uni.scanCode({
+		scanType: ['qrCode', 'barCode'],
+		success: (res) => {
+			if (res.result) {
+				packageQuery.value.trackingNo = res.result.trim()
+				uni.showToast({ title: '已识别单号', icon: 'success' })
+			}
+		},
+		fail: (err) => {
+			console.warn('scan failed:', err)
+			uni.showToast({ title: '扫码失败', icon: 'none' })
+		}
+	})
+}
+
+const pastePackageCode = () => {
+	uni.getClipboardData({
+		success: (res) => {
+			if (res.data && res.data.trim()) {
+				packageQuery.value.trackingNo = res.data.trim()
+				uni.showToast({ title: '已粘贴单号', icon: 'success' })
+			} else {
+				uni.showToast({ title: '剪贴板为空', icon: 'none' })
+			}
+		},
+		fail: (err) => {
+			console.warn('get clipboard failed:', err)
+			uni.showToast({ title: '获取剪贴板失败', icon: 'none' })
+		}
+	})
 }
 
 const applyFaultTypes = (list = []) => {
@@ -1729,7 +2226,7 @@ const statusItems = computed(() => {
 	const counts = orderList.value.reduce(
 		(acc, item) => {
 			acc.all += 1
-			if (item.statusGroup === '待处理') acc.pending += 1
+			if (pendingRepairStatuses.includes(item.statusGroup)) acc.pending += 1
 			if (item.statusGroup === '维修中') acc.fixing += 1
 			if (item.statusGroup === '已发货') acc.shipped += 1
 			return acc
@@ -1743,13 +2240,23 @@ const statusItems = computed(() => {
 	}))
 })
 
+const countOrdersByStatus = (status) => orderList.value.filter((item) => item.statusGroup === status).length
+
 const orderTabs = computed(() => [
-	`全部 ${orderList.value.length}`,
-	`待处理 ${orderList.value.filter((item) => item.statusGroup === '待处理').length}`,
-	`维修中 ${orderList.value.filter((item) => item.statusGroup === '维修中').length}`,
-	`已发货 ${orderList.value.filter((item) => item.statusGroup === '已发货').length}`,
-	`未开票 ${orderList.value.filter((item) => !item.invoiced).length}`,
-	`已开票 ${orderList.value.filter((item) => item.invoiced).length}`
+	{ key: '全部', label: '全部', count: orderList.value.length },
+	{ key: '待处理', label: '待处理', count: orderList.value.filter((item) => pendingRepairStatuses.includes(item.statusGroup)).length },
+	{ key: '维修中', label: '维修中', count: countOrdersByStatus('维修中') },
+	{ key: '已发货', label: '已发货', count: countOrdersByStatus('已发货') },
+	{ key: '未开票', label: '未开票', count: orderList.value.filter((item) => invoiceTodoStatusKeys.includes(getInvoiceStatusKey(item))).length },
+	{ key: '已开票', label: '已开票', count: orderList.value.filter((item) => getInvoiceStatusKey(item) === 'issued').length }
+])
+
+const invoiceTodoStatusKeys = ['available', 'processing', 'reviewing', 'approved', 'issuing']
+const invoiceTodoOrders = computed(() => orderList.value.filter((item) => invoiceTodoStatusKeys.includes(getInvoiceStatusKey(item))))
+const invoiceIssuedOrders = computed(() => orderList.value.filter((item) => getInvoiceStatusKey(item) === 'issued'))
+const invoiceTabs = computed(() => [
+	`待开票 ${invoiceTodoOrders.value.length}`,
+	`已开票 ${invoiceIssuedOrders.value.length}`
 ])
 
 const diagProductLabel = computed(() => {
@@ -1797,29 +2304,57 @@ const diagSheetOptions = computed(() => {
 const warrantyDoc = computed(() => docMap.value.warranty || {})
 const activeDoc = computed(() => docMap.value[activeModule.value] || docFallbacks[activeModule.value] || docFallbacks['guide-quick'] || {})
 const isDocModule = computed(() => docModuleIds.includes(activeModule.value))
+const userDisplayName = computed(() => currentUser.value.nickname || currentUser.value.name || (currentUser.value.phone ? `用户${String(currentUser.value.phone).slice(-4)}` : '已登录用户'))
+const userDisplayUnit = computed(() => currentUser.value.unit || currentUser.value.companyName || '已绑定手机号')
+const userAvatarText = computed(() => String(userDisplayName.value || '用').slice(0, 1))
 const feedbackContact = computed(() => feedbackContacts.find((item) => item.id === feedbackContactKind.value) || feedbackContacts[0])
 const receiverLastIndex = computed(() => receiver.value.length - 1)
 const filteredTrackOrders = computed(() => {
-	if (activeTrackTab.value === '全部') return trackOrders.value
-	return trackOrders.value.filter((item) => item.statusGroup === activeTrackTab.value)
+	const keyword = trackSearchKeyword.value.trim().toLowerCase()
+	return trackOrders.value.filter((item) => {
+		const statusMatched = activeTrackTab.value === '全部' || item.statusGroup === activeTrackTab.value
+		if (!statusMatched) return false
+		if (!keyword) return true
+		const searchable = [item.id, item.model, item.serial, item.productSerial, item.trackingNo]
+			.filter(Boolean)
+			.join(' ')
+			.toLowerCase()
+		return searchable.includes(keyword)
+	})
 })
 const filteredOrderList = computed(() => {
-	if (activeOrdersTab.value.includes('待处理')) return orderList.value.filter((item) => item.statusGroup === '待处理')
-	if (activeOrdersTab.value.includes('维修中')) return orderList.value.filter((item) => item.statusGroup === '维修中')
-	if (activeOrdersTab.value.includes('已发货')) return orderList.value.filter((item) => item.statusGroup === '已发货')
-	if (activeOrdersTab.value.includes('未开票')) return orderList.value.filter((item) => !item.invoiced)
-	if (activeOrdersTab.value.includes('已开票')) return orderList.value.filter((item) => item.invoiced)
+	if (activeOrdersTab.value === '待处理') return orderList.value.filter((item) => pendingRepairStatuses.includes(item.statusGroup))
+	if (activeOrdersTab.value === '未开票') return orderList.value.filter((item) => invoiceTodoStatusKeys.includes(getInvoiceStatusKey(item)))
+	if (activeOrdersTab.value === '已开票') return orderList.value.filter((item) => getInvoiceStatusKey(item) === 'issued')
+	const matchedStatus = repairStatusFlow.find((status) => activeOrdersTab.value === status)
+	if (matchedStatus) return orderList.value.filter((item) => item.statusGroup === matchedStatus)
 	return orderList.value
 })
 const detailOrder = computed(() => {
-	const fallbackOrder = trackOrders.value[0] || orderList.value[0] || {}
-	const sourceId = trackDetailOrder.value || orderDetailOrder.value || fallbackOrder.id
+	const sourceId = trackDetailOrder.value || orderDetailOrder.value
 	return (
 		trackOrders.value.find((item) => item.id === sourceId) ||
 		orderList.value.find((item) => item.id === sourceId) ||
-		fallbackOrder
+		{}
 	)
 })
+const detailTimeline = computed(() => {
+	const timeline = detailOrder.value.timeline
+	if (Array.isArray(timeline) && timeline.length) return normalizePackageTimeline(timeline)
+	if (!detailOrder.value.id) return []
+	return [
+		{
+			title: detailOrder.value.status || '已提交',
+			desc: '工单进度已同步，更多节点会在后台更新后展示。',
+			time: detailOrder.value.time || detailOrder.value.date || '',
+			pending: false
+		}
+	]
+})
+const detailInvoiceOrder = computed(() => resolveOrderRecord(detailOrder.value))
+const activeInvoiceOrder = computed(() => orderList.value.find((item) => item.id === activeInvoiceOrderId.value) || {})
+const detailQuoteItems = computed(() => Array.isArray(detailOrder.value.quoteItems) ? detailOrder.value.quoteItems : [])
+const detailPaymentProofs = computed(() => Array.isArray(detailOrder.value.paymentProofs) ? detailOrder.value.paymentProofs : [])
 
 logBoot('computed state ready')
 
@@ -1869,6 +2404,321 @@ const copyAll = () => {
 	})
 }
 
+function resolveOrderRecord(order = {}) {
+	return orderList.value.find((item) => item.id === order.id) || order || {}
+}
+
+const patchOrderRecord = (orderId, patch = {}) => {
+	if (!orderId) return
+	const nextPatch = {
+		...(orderLocalPatches.value[orderId] || {}),
+		...patch
+	}
+	orderLocalPatches.value = {
+		...orderLocalPatches.value,
+		[orderId]: nextPatch
+	}
+	writeStorage(localOrderPatchKey, orderLocalPatches.value)
+
+	const applyPatch = (list) => list.map((item) => (item.id === orderId ? { ...item, ...nextPatch } : item))
+	orderList.value = applyPatch(orderList.value)
+	trackOrders.value = applyPatch(trackOrders.value)
+}
+
+const getQuoteTotal = (order = {}) => Number(order.totalFee || 0) || sumQuoteFee(order.quoteItems || [], 'partsFee') + sumQuoteFee(order.quoteItems || [], 'laborFee')
+
+const getQuoteMeta = (order = {}) => {
+	if (!order.id) return { label: '待同步', tone: 'muted', desc: '请选择一个工单查看报价。' }
+	if (!Array.isArray(order.quoteItems) || !order.quoteItems.length) return { label: '待检测', tone: 'muted', desc: '工程师检测完成后会生成正式报价。' }
+	if (order.quoteStatus === 'rejected') return { label: '已拒绝', tone: 'warn', desc: '客户暂未同意该维修报价。' }
+	if (order.authorizationStatus === 'confirmed') return { label: '已确认', tone: 'ok', desc: '报价已确认，工程师可继续维修。' }
+	return { label: '待确认', tone: 'warn', desc: '请确认维修项目、配件、工时和总价后再授权维修。' }
+}
+
+const getAuthorizationMeta = (order = {}) => {
+	if (!Array.isArray(order.quoteItems) || !order.quoteItems.length) return { label: '待报价', tone: 'muted', desc: '检测报价生成后才需要授权。' }
+	if (order.authorizationStatus === 'confirmed') return { label: '已授权', tone: 'ok', desc: order.authorizationTime ? `客户已于 ${order.authorizationTime} 授权维修。` : '客户已授权维修。' }
+	return { label: '待授权', tone: 'warn', desc: '客户确认报价后，后台再安排维修。' }
+}
+
+const getPaymentMeta = (order = {}) => {
+	const proofs = Array.isArray(order.paymentProofs) ? order.paymentProofs : []
+	if (!getQuoteTotal(order)) return { label: '待报价', tone: 'muted', desc: '报价金额确认后，可上传付款或对公转账凭证。' }
+	if (proofs.length || order.paymentStatus === 'uploaded') return { label: '待核销', tone: 'warn', desc: '凭证已留痕，等待财务核对到账。' }
+	if (order.paymentStatus === 'paid') return { label: '已支付', tone: 'ok', desc: '财务已确认到账。' }
+	return { label: '待上传', tone: 'muted', desc: '如该维修需要收费，请上传支付截图或对公转账凭证。' }
+}
+
+const canConfirmRepair = (order = {}) => Array.isArray(order.quoteItems) && order.quoteItems.length && order.authorizationStatus !== 'confirmed'
+
+const canUploadPaymentProof = (order = {}) => Boolean(order.id && getQuoteTotal(order) > 0)
+
+const confirmRepairAuthorization = (order = {}) => {
+	if (!canConfirmRepair(order)) return
+	uni.showModal({
+		title: '确认维修授权',
+		content: `确认报价总额 ${formatMoney(getQuoteTotal(order))}，并授权工程师继续维修？`,
+		confirmText: '确认授权',
+		cancelText: '再看看',
+		success: ({ confirm }) => {
+			if (!confirm) return
+			patchOrderRecord(order.id, {
+				authorizationStatus: 'confirmed',
+				authorizationTime: todayText(),
+				quoteStatus: 'confirmed'
+			})
+			uni.showToast({ title: '已授权维修', icon: 'success' })
+		}
+	})
+}
+
+const uploadPaymentProof = async (order = {}) => {
+	if (!canUploadPaymentProof(order) || paymentProofUploading.value) return
+	try {
+		const chooseRes = await uni.chooseImage({
+			count: 1,
+			sizeType: ['compressed'],
+			sourceType: ['album', 'camera']
+		})
+		const path = chooseRes.tempFilePaths && chooseRes.tempFilePaths[0]
+		if (!path) return
+		const oversized = (chooseRes.tempFiles || []).find((file) => isFileTooLarge(file, maxRepairImageSize))
+		if (oversized) {
+			uni.showToast({ title: `图片不能超过${formatFileSize(maxRepairImageSize)}`, icon: 'none' })
+			return
+		}
+
+		paymentProofUploading.value = true
+		uni.showLoading({ title: '上传中' })
+		let proofUrl = path
+		try {
+			const uploadRes = await uploadImage(path)
+			proofUrl = normalizeUploadUrl(uploadRes, path)
+		} catch (error) {
+			console.warn('payment proof upload fallback:', error)
+		}
+		const nextProofs = [
+			...(Array.isArray(order.paymentProofs) ? order.paymentProofs : []),
+			{ id: `pay-${Date.now()}`, path, url: proofUrl, time: todayText() }
+		]
+		patchOrderRecord(order.id, {
+			paymentStatus: 'uploaded',
+			paymentProofs: nextProofs
+		})
+		uni.showToast({ title: '凭证已留痕', icon: 'success' })
+	} catch (error) {
+		console.warn('choose payment proof failed:', error)
+		uni.showToast({ title: '上传凭证失败', icon: 'none' })
+	} finally {
+		paymentProofUploading.value = false
+		uni.hideLoading()
+	}
+}
+
+const previewPaymentProof = (index = 0) => {
+	const urls = detailPaymentProofs.value.map((item) => item.url || item.path).filter(Boolean)
+	if (!urls.length) return
+	uni.previewImage({
+		current: urls[index] || urls[0],
+		urls
+	})
+}
+
+function getInvoiceStatusKey(order = {}) {
+	if (order.invoiceStatus) return order.invoiceStatus
+	if (order.invoiced) return 'issued'
+	if (order.status === '已取消') return 'disabled'
+	if (['已完成', '已评价'].includes(order.statusGroup) || ['已完成', '已评价'].includes(order.status)) return 'available'
+	return 'unavailable'
+}
+
+function getInvoiceMeta(order = {}) {
+	const status = getInvoiceStatusKey(order)
+	const metaMap = {
+		available: { label: '可申请', tone: 'ok', stage: '待申请', desc: '维修已完成，可申请电子普通发票。' },
+		processing: { label: '审核中', tone: 'warn', stage: '审核中', desc: '申请已提交，客服正在核对抬头、税号和维修金额。' },
+		reviewing: { label: '审核中', tone: 'warn', stage: '审核中', desc: '申请已提交，客服正在核对抬头、税号和维修金额。' },
+		approved: { label: '开票中', tone: 'info', stage: '开票中', desc: '开票资料已审核通过，等待财务开具电子发票。' },
+		issuing: { label: '开票中', tone: 'info', stage: '开票中', desc: '财务正在开具电子发票，完成后会同步链接。' },
+		issued: { label: '已开票', tone: 'ok', stage: '已开票', desc: '电子发票已开具，可复制链接查看。' },
+		unavailable: { label: '待完成', tone: 'muted', stage: '不可申请', desc: '维修完成并结算后即可申请开票。' },
+		disabled: { label: '不可开票', tone: 'muted', stage: '不可申请', desc: '该订单暂不支持开票。' }
+	}
+	return metaMap[status] || metaMap.unavailable
+}
+
+const resetInvoiceForm = (order = {}) => {
+	invoiceForm.value = {
+		invoiceType: '电子普通发票',
+		titleType: 'company',
+		title: order.invoiceTitle || addressForm.value.unit || '',
+		taxNo: order.taxNo || '',
+		email: order.invoiceEmail || '',
+		remark: ''
+	}
+}
+
+const startInvoiceApply = (order = {}) => {
+	const sourceOrder = resolveOrderRecord(order)
+	const status = getInvoiceStatusKey(sourceOrder)
+
+	if (status === 'processing') {
+		uni.showToast({ title: '发票正在开具中', icon: 'none' })
+		return
+	}
+
+	if (status !== 'available') {
+		uni.showToast({ title: getInvoiceMeta(sourceOrder).desc, icon: 'none' })
+		return
+	}
+
+	resetInvoiceForm(sourceOrder)
+	activeInvoiceOrderId.value = sourceOrder.id
+}
+
+const cancelInvoiceApply = () => {
+	activeInvoiceOrderId.value = ''
+}
+
+const submitInvoiceApply = async () => {
+	if (invoiceSubmitting.value) return
+	const order = activeInvoiceOrder.value
+
+	if (!order.id) {
+		uni.showToast({ title: '请选择开票工单', icon: 'none' })
+		return
+	}
+
+	if (!invoiceForm.value.title.trim()) {
+		uni.showToast({ title: '请填写发票抬头', icon: 'none' })
+		return
+	}
+
+	if (invoiceForm.value.titleType === 'company' && !invoiceForm.value.taxNo.trim()) {
+		uni.showToast({ title: '请填写税号', icon: 'none' })
+		return
+	}
+
+	if (!invoiceForm.value.email.trim()) {
+		uni.showToast({ title: '请填写接收邮箱', icon: 'none' })
+		return
+	}
+
+	invoiceSubmitting.value = true
+	try {
+		await applyInvoice({
+			orderId: order.id,
+			invoiceType: invoiceForm.value.invoiceType,
+			titleType: invoiceForm.value.titleType,
+			title: invoiceForm.value.title.trim(),
+			taxNo: invoiceForm.value.titleType === 'company' ? invoiceForm.value.taxNo.trim() : '',
+			email: invoiceForm.value.email.trim(),
+			remark: invoiceForm.value.remark.trim()
+		})
+
+		patchOrderRecord(order.id, {
+			invoiceStatus: 'processing',
+			invoiceType: invoiceForm.value.invoiceType,
+			invoiceTitle: invoiceForm.value.title.trim(),
+			taxNo: invoiceForm.value.titleType === 'company' ? invoiceForm.value.taxNo.trim() : '',
+			invoiceEmail: invoiceForm.value.email.trim()
+		})
+		activeInvoiceOrderId.value = ''
+		activeInvoiceTab.value = '待开票'
+		uni.showModal({
+			title: '提交成功',
+			content: '开票申请已提交，后续会在发票与开票中同步审核、开票和电子发票链接。',
+			showCancel: false,
+			confirmText: '知道了'
+		})
+	} catch (error) {
+		console.warn('submit invoice failed:', error)
+		patchOrderRecord(order.id, {
+			invoiceStatus: 'processing',
+			invoiceType: invoiceForm.value.invoiceType,
+			invoiceTitle: invoiceForm.value.title.trim(),
+			taxNo: invoiceForm.value.titleType === 'company' ? invoiceForm.value.taxNo.trim() : '',
+			invoiceEmail: invoiceForm.value.email.trim()
+		})
+		activeInvoiceOrderId.value = ''
+		activeInvoiceTab.value = '待开票'
+		uni.showModal({
+			title: '已记录开票申请',
+			content: '当前开票接口暂未开放，前端已先保留申请记录；后台上线后可同步审核、开票状态和电子发票链接。',
+			showCancel: false,
+			confirmText: '知道了'
+		})
+	} finally {
+		invoiceSubmitting.value = false
+	}
+}
+
+const copyInvoiceLink = (order = {}) => {
+	const sourceOrder = resolveOrderRecord(order)
+	const invoiceLink = sourceOrder.invoiceUrl
+	if (!invoiceLink) {
+		uni.showToast({ title: '暂无电子发票链接', icon: 'none' })
+		return
+	}
+	uni.setClipboardData({
+		data: invoiceLink,
+		success: () => uni.showToast({ title: '发票链接已复制', icon: 'success' }),
+		fail: () => uni.showToast({ title: '复制失败', icon: 'none' })
+	})
+}
+
+const handleInvoiceAction = (order = {}) => {
+	const sourceOrder = resolveOrderRecord(order)
+	const status = getInvoiceStatusKey(sourceOrder)
+
+	if (status === 'issued') {
+		copyInvoiceLink(sourceOrder)
+		return
+	}
+
+	activeModule.value = 'invoices'
+	activeInvoiceTab.value = '待开票'
+	if (status === 'available') startInvoiceApply(sourceOrder)
+}
+
+const restoreLocalBusinessState = () => {
+	orderLocalPatches.value = readStorage(localOrderPatchKey, {})
+	const records = readStorage(feedbackRecordKey, [])
+	feedbackRecords.value = Array.isArray(records) ? records : []
+}
+
+const saveFeedbackRecords = () => {
+	writeStorage(feedbackRecordKey, feedbackRecords.value)
+}
+
+const getFeedbackMeta = (record = {}) => {
+	const metaMap = {
+		submitted: { label: '已提交', tone: 'info' },
+		processing: { label: '处理中', tone: 'warn' },
+		replied: { label: '已回复', tone: 'ok' },
+		closed: { label: '已完成', tone: 'ok' }
+	}
+	return metaMap[record.status] || metaMap.submitted
+}
+
+const addLocalFeedbackRecord = (status = 'submitted') => {
+	const ticketNo = feedbackTicketNo()
+	const record = {
+		ticketNo,
+		type: feedbackType.value,
+		content: feedbackText.value.trim(),
+		contactType: feedbackContactKind.value,
+		contact: feedbackContactValue.value.trim(),
+		orderId: feedbackOrderId.value.trim(),
+		status,
+		reply: '',
+		time: todayText()
+	}
+	feedbackRecords.value = [record, ...feedbackRecords.value].slice(0, 10)
+	saveFeedbackRecords()
+	return record
+}
+
 const previewSurveyPoster = () => {
 	uni.previewImage({
 		current: surveyPosterUrl,
@@ -1877,21 +2727,34 @@ const previewSurveyPoster = () => {
 }
 
 const openModule = (id, type) => {
+	if (id === 'address') {
+		openAddressPage()
+		return
+	}
+
 	previousModule.value = activeModule.value
 	activeModule.value = id
 	showOfficial.value = false
 	showQr.value = false
-	
+
+	if (id === 'invoices') {
+		activeInvoiceOrderId.value = ''
+		activeInvoiceTab.value = '待开票'
+	}
+
 	if (id === 'orders' && type !== undefined) {
 		const typeMap = ['全部', '待处理', '维修中', '已发货', '未开票', '已开票']
-		if (typeMap[type]) {
+		if (typeof type === 'string') {
+			activeOrdersTab.value = type === 'pending' ? '待处理' : type
+		} else if (typeMap[type]) {
 			activeOrdersTab.value = typeMap[type]
 		}
 	}
+
 }
 
 const closeModule = () => {
-	if (activeModule.value === 'order-detail' && (previousModule.value === 'track' || previousModule.value === 'orders')) {
+	if (activeModule.value === 'order-detail' && (previousModule.value === 'track' || previousModule.value === 'orders' || previousModule.value === 'invoices')) {
 		activeModule.value = previousModule.value
 		previousModule.value = ''
 		return
@@ -1912,16 +2775,16 @@ const openOrderDetail = (order) => {
 
 const addRepairProduct = () => {
 	repairProductSeed += 1
-	repairProducts.value.push({ 
-		id: repairProductSeed, 
-		name: '', 
-		model: '', 
-		serial: '', 
-		buyDate: '', 
-		voucher: '', 
+	repairProducts.value.push({
+		id: repairProductSeed,
+		name: '',
+		model: '',
+		serial: '',
+		buyDate: '',
+		voucher: '',
 		voucherList: [],
-		faultDesc: '', 
-		media: [] 
+		faultDesc: '',
+		media: []
 	})
 }
 
@@ -2018,6 +2881,11 @@ const uploadRepairImage = async (index) => {
 		})
 		const paths = chooseRes.tempFilePaths || []
 		if (!paths.length) return
+		const oversized = (chooseRes.tempFiles || []).find((file) => isFileTooLarge(file, maxRepairImageSize))
+		if (oversized) {
+			uni.showToast({ title: `图片不能超过${formatFileSize(maxRepairImageSize)}`, icon: 'none' })
+			return
+		}
 
 		uni.showLoading({ title: '上传中' })
 		for (const path of paths) {
@@ -2051,6 +2919,10 @@ const uploadRepairVideo = async (index) => {
 			maxDuration: 60
 		})
 		if (!chooseRes.tempFilePath) return
+		if (isFileTooLarge(chooseRes, maxRepairVideoSize)) {
+			uni.showToast({ title: `视频不能超过${formatFileSize(maxRepairVideoSize)}`, icon: 'none' })
+			return
+		}
 
 		uni.showLoading({ title: '上传中' })
 		const uploadRes = await uploadVideo(chooseRes.tempFilePath)
@@ -2099,35 +2971,39 @@ const splitRepairMedia = (media = []) => ({
 const buildRepairPayload = () => {
 	const product = repairProducts.value[0] || {}
 	const firstMedia = splitRepairMedia(product.media)
+	const trackingNo = normalizeTrackingNo(repairForm.value.trackingNo)
+	const receiverPhone = normalizePhone(repairForm.value.receiverPhone)
 	return {
-		productName: product.name || product.model || '维修产品',
-		productModel: product.model,
-		productSerial: product.serial,
+		status: 'submitted',
+		statusText: '已提交',
+		productName: (product.name || product.model || '维修产品').trim(),
+		productModel: String(product.model || '').trim(),
+		productSerial: String(product.serial || '').trim(),
 		faultType: product.faultType || product.faultDesc || '待检测',
-		faultDesc: product.faultDesc,
+		faultDesc: String(product.faultDesc || '').trim(),
 		images: firstMedia.images,
 		videos: firstMedia.videos,
 		logisticsCompany: repairForm.value.logisticsCompany,
-		trackingNo: repairForm.value.trackingNo,
+		trackingNo,
 		sendMethod: repairForm.value.sendMethod,
-		senderName: repairForm.value.receiverName,
-		senderPhone: repairForm.value.receiverPhone,
-		senderAddress: repairForm.value.receiverAddress,
-		receiverName: repairForm.value.receiverName,
-		receiverPhone: repairForm.value.receiverPhone,
-		receiverAddress: repairForm.value.receiverAddress,
-		receiverUnit: repairForm.value.receiverUnit,
+		senderName: String(repairForm.value.receiverName || '').trim(),
+		senderPhone: receiverPhone,
+		senderAddress: String(repairForm.value.receiverAddress || '').trim(),
+		receiverName: String(repairForm.value.receiverName || '').trim(),
+		receiverPhone,
+		receiverAddress: String(repairForm.value.receiverAddress || '').trim(),
+		receiverUnit: String(repairForm.value.receiverUnit || '').trim(),
 		products: repairProducts.value.map((item) => {
 			const media = splitRepairMedia(item.media)
 			const voucherUrls = (item.voucherList || []).map(v => v.url || v.path).filter(Boolean)
 			return {
-				productName: item.name || item.model || '维修产品',
-				productModel: item.model,
-				productSerial: item.serial,
+				productName: (item.name || item.model || '维修产品').trim(),
+				productModel: String(item.model || '').trim(),
+				productSerial: String(item.serial || '').trim(),
 				buyDate: item.buyDate,
 				voucher: item.voucher,
 				voucherImages: voucherUrls,
-				faultDesc: item.faultDesc,
+				faultDesc: String(item.faultDesc || '').trim(),
 				images: media.images,
 				videos: media.videos
 			}
@@ -2135,23 +3011,75 @@ const buildRepairPayload = () => {
 	}
 }
 
-const submitRepair = async () => {
-	// 必填项校验：产品型号、产品序列号、故障描述、物流公司、运单号
-	// 其他字段（购买凭证、产品名称、购买日期、故障图片/视频）均为选填
-	const hasInvalidProduct = repairProducts.value.some((item) => !item.model || !item.serial || !item.faultDesc)
-	if (hasInvalidProduct || !repairForm.value.logisticsCompany || !repairForm.value.trackingNo) {
-		uni.showToast({ title: '请完善必填项信息', icon: 'none' })
-		return
+const validateRepairForm = () => {
+	for (let index = 0; index < repairProducts.value.length; index += 1) {
+		const product = repairProducts.value[index] || {}
+		const label = `第 ${index + 1} 个产品`
+		if (!String(product.serial || '').trim()) {
+			uni.showToast({ title: `${label}请填写序列号`, icon: 'none' })
+			return false
+		}
+		if (!String(product.faultDesc || '').trim()) {
+			uni.showToast({ title: `${label}请填写故障描述`, icon: 'none' })
+			return false
+		}
+		if (!Array.isArray(product.media) || !product.media.length) {
+			uni.showToast({ title: `${label}请上传故障附件`, icon: 'none' })
+			return false
+		}
 	}
 
+	if (!repairForm.value.logisticsCompany) {
+		uni.showToast({ title: '请选择物流公司', icon: 'none' })
+		return false
+	}
+
+	if (!isValidTrackingNo(repairForm.value.trackingNo)) {
+		uni.showToast({ title: '请输入正确运单号', icon: 'none' })
+		return false
+	}
+
+	if (!String(repairForm.value.receiverName || '').trim()) {
+		uni.showToast({ title: '请填写收货人', icon: 'none' })
+		return false
+	}
+
+	if (!isValidPhone(repairForm.value.receiverPhone)) {
+		uni.showToast({ title: '请输入正确手机号', icon: 'none' })
+		return false
+	}
+
+	if (!String(repairForm.value.receiverAddress || '').trim()) {
+		uni.showToast({ title: '请填写详细地址', icon: 'none' })
+		return false
+	}
+
+	if (!String(repairForm.value.receiverUnit || '').trim()) {
+		uni.showToast({ title: '请填写单位名称', icon: 'none' })
+		return false
+	}
+
+	repairForm.value.trackingNo = normalizeTrackingNo(repairForm.value.trackingNo)
+	repairForm.value.receiverPhone = normalizePhone(repairForm.value.receiverPhone)
+	return true
+}
+
+const submitRepair = async () => {
+	if (repairSubmitting.value) return
+	if (!validateRepairForm()) return
+
+	repairSubmitting.value = true
 	try {
 		const res = await submitRepairOrder(buildRepairPayload())
-		submittedOrderId.value = res && res.orderId ? res.orderId : submittedOrderId.value
+		submittedOrderId.value = res && (res.orderNo || res.orderId || res.id) ? (res.orderNo || res.orderId || res.id) : ''
+		uni.removeStorageSync(repairDraftKey)
 		openModule('repair-success')
 		loadRemoteContent()
 	} catch (error) {
-		console.warn('submit repair fallback:', error)
-		uni.showToast({ title: '后台接口未开放，已保留表单信息', icon: 'none' })
+		console.warn('submit repair failed:', error)
+		uni.showToast({ title: error.message || '报修接口暂未开放，已保留草稿', icon: 'none' })
+	} finally {
+		repairSubmitting.value = false
 	}
 }
 
@@ -2246,6 +3174,11 @@ const openVoucherPicker = (productIndex) => {
 		sizeType: ['compressed'],
 		success: (chooseRes) => {
 			const tempFilePaths = chooseRes.tempFilePaths || []
+			const oversized = (chooseRes.tempFiles || []).find((file) => isFileTooLarge(file, maxRepairImageSize))
+			if (oversized) {
+				uni.showToast({ title: `凭证图片不能超过${formatFileSize(maxRepairImageSize)}`, icon: 'none' })
+				return
+			}
 			tempFilePaths.forEach((path) => {
 				product.voucherList.push({
 					id: `voucher-${Date.now()}-${Math.random()}`,
@@ -2277,11 +3210,17 @@ const saveAddress = async () => {
 		return
 	}
 
+	const phoneRegex = /^1[3-9]\d{9}$/
+	if (!phoneRegex.test(addressForm.value.phone.replace(/\s/g, ''))) {
+		uni.showToast({ title: '请输入正确的手机号', icon: 'none' })
+		return
+	}
+
 	const region = parseRegion(addressForm.value.region)
 	const payload = {
 		addressId: addressForm.value.addressId,
 		name: addressForm.value.name,
-		phone: addressForm.value.phone,
+		phone: addressForm.value.phone.replace(/\s/g, ''),
 		province: region.province,
 		city: region.city,
 		district: region.district,
@@ -2295,17 +3234,69 @@ const saveAddress = async () => {
 			await updateAddress(payload)
 		} else {
 			const res = await addAddress(payload)
-			addressForm.value.addressId = res && res.addressId ? res.addressId : ''
+			if (res && res.addressId) {
+				addressForm.value.addressId = res.addressId
+			}
 		}
 		uni.showToast({ title: '地址已保存', icon: 'success' })
+
+		setTimeout(() => {
+			closeModule()
+		}, 1500)
 	} catch (error) {
 		console.warn('save address fallback:', error)
-		uni.showToast({ title: '地址接口未开放', icon: 'none' })
+		uni.showToast({
+			title: error.message || '保存地址失败，请重试',
+			icon: 'none'
+		})
 	}
 }
 
+const selectRegion = () => {
+	uni.showToast({
+		title: '地区选择功能开发中',
+		icon: 'none'
+	})
+}
+
+const resetAddressForm = () => {
+	addressForm.value = {
+		addressId: '',
+		name: '',
+		phone: '',
+		region: '',
+		detail: '',
+		unit: '',
+		def: false
+	}
+}
+
+const handleDeleteAddress = async () => {
+	uni.showModal({
+		title: '确认删除',
+		content: '删除后将无法恢复，确定要删除这个地址吗？',
+		confirmText: '删除',
+		confirmColor: '#EF4444',
+		success: async (res) => {
+			if (res.confirm) {
+				try {
+					await deleteAddress(addressForm.value.addressId)
+					resetAddressForm()
+					uni.showToast({ title: '删除成功', icon: 'success' })
+					setTimeout(() => {
+						closeModule()
+					}, 1500)
+				} catch (error) {
+					console.warn('delete address fallback:', error)
+					uni.showToast({ title: '地址接口未开放', icon: 'none' })
+				}
+			}
+		}
+	})
+}
+
 const submitFeedback = async () => {
-	if (!feedbackText.value || !feedbackContactValue.value) {
+	if (!feedbackText.value.trim() || !feedbackContactValue.value.trim()) {
 		uni.showToast({ title: '请填写反馈内容和联系方式', icon: 'none' })
 		return
 	}
@@ -2313,37 +3304,75 @@ const submitFeedback = async () => {
 	try {
 		await addComplaint({
 			type: feedbackType.value === '投诉' ? 0 : 1,
-			content: feedbackText.value,
+			content: feedbackText.value.trim(),
 			contactType: feedbackContactKind.value,
-			contact: feedbackContactValue.value,
-			orderId: feedbackOrderId.value
+			contact: feedbackContactValue.value.trim(),
+			orderId: feedbackOrderId.value.trim()
 		})
-		uni.showToast({ title: '已提交', icon: 'success' })
+		const record = addLocalFeedbackRecord('submitted')
+		uni.showModal({
+			title: '提交成功',
+			content: `反馈单号：${record.ticketNo}。客服回复和处理状态会在“我的反馈单”中展示。`,
+			showCancel: false,
+			confirmText: '知道了'
+		})
 		feedbackText.value = ''
 		feedbackContactValue.value = ''
 		feedbackOrderId.value = ''
 	} catch (error) {
 		console.warn('submit feedback fallback:', error)
-		uni.showToast({ title: '投诉建议接口未开放', icon: 'none' })
+		const record = addLocalFeedbackRecord('submitted')
+		uni.showModal({
+			title: '已生成反馈单',
+			content: `反馈单号：${record.ticketNo}。当前投诉建议接口未开放，前端已先保留记录；后台上线后可同步客服回复与处理状态。`,
+			showCancel: false,
+			confirmText: '知道了'
+		})
+		feedbackText.value = ''
+		feedbackContactValue.value = ''
+		feedbackOrderId.value = ''
 	}
 }
 
-const loginSuccess = async () => {
+const onGetPhoneNumberLogin = async (event) => {
+	if (event.detail.errMsg !== 'getPhoneNumber:ok') {
+		if (event.detail.errMsg && event.detail.errMsg.includes('cancel')) return
+		uni.showToast({ title: '授权失败，请重试', icon: 'none' })
+		return
+	}
+
+	if (!event.detail.code) {
+		uni.showToast({ title: '获取手机号授权失败', icon: 'none' })
+		return
+	}
+
 	try {
-		const loginRes = await uni.login({ provider: 'weixin' })
-		const res = await wechatLogin({ code: loginRes.code })
-		if (res && res.token) uni.setStorageSync('token', res.token)
+		const res = await wechatLogin({ code: event.detail.code })
+		if (!res || !res.token) {
+			uni.showToast({ title: '登录响应缺少 token', icon: 'none' })
+			return
+		}
+
+		uni.setStorageSync('token', res.token)
+		uni.setStorageSync('userInfo', res.userInfo || {})
+		uni.setStorageSync('isLoggedIn', true)
+		currentUser.value = res.userInfo || {}
 		logged.value = true
 		activeModule.value = ''
 		activeTab.value = 'mine'
 		uni.showToast({ title: '登录成功', icon: 'success' })
 	} catch (error) {
-		console.warn('wechat login fallback:', error)
-		logged.value = true
-		activeModule.value = ''
-		activeTab.value = 'mine'
-		uni.showToast({ title: '登录接口未开放，已进入体验模式', icon: 'none' })
+		console.warn('wechat phone login failed:', error)
+		uni.showToast({ title: error.message || '登录接口暂未开放', icon: 'none' })
 	}
+}
+
+const logoutLocal = () => {
+	uni.removeStorageSync('token')
+	uni.removeStorageSync('userInfo')
+	uni.removeStorageSync('isLoggedIn')
+	currentUser.value = {}
+	logged.value = false
 }
 
 const go = (id, type) => {
@@ -2351,6 +3380,11 @@ const go = (id, type) => {
 		activeTab.value = id
 		activeModule.value = ''
 		previousModule.value = ''
+		return
+	}
+
+	if (id === 'address') {
+		openAddressPage()
 		return
 	}
 
@@ -2362,6 +3396,13 @@ const go = (id, type) => {
 	uni.showToast({ title: '功能已接入当前页面', icon: 'none' })
 }
 
+const openAddressPage = () => {
+	uni.navigateTo({
+		url: '/pages/address/index',
+		fail: () => uni.showToast({ title: '收货地址页面暂不可用', icon: 'none' })
+	})
+}
+
 const openCustomerService = () => {
 	uni.showToast({ title: '正在连接客服...', icon: 'none' })
 }
@@ -2369,6 +3410,17 @@ const openCustomerService = () => {
 const makePhoneCall = () => {
 	uni.makePhoneCall({
 		phoneNumber: '13929198537',
+		success: () => {},
+		fail: (error) => {
+			console.warn('make phone call failed:', error)
+			uni.showToast({ title: '拨打电话失败', icon: 'none' })
+		}
+	})
+}
+
+const callPhone = (phoneNumber) => {
+	uni.makePhoneCall({
+		phoneNumber: phoneNumber.replace(/\s/g, ''),
 		success: () => {},
 		fail: (error) => {
 			console.warn('make phone call failed:', error)
@@ -2394,6 +3446,20 @@ const goOfficial = () => {
 	showOfficial.value = false
 	go('company')
 }
+
+onLoad((options = {}) => {
+	const type = Number(options.type)
+	const routeType = Number.isInteger(type) ? type : undefined
+
+	if (options.module && moduleMap[options.module]) {
+		openModule(options.module, routeType)
+		return
+	}
+
+	if (routeType !== undefined) {
+		openModule('orders', routeType)
+	}
+})
 
 const loadRemoteContent = async () => {
 	const tasks = [
@@ -2440,16 +3506,22 @@ const loadRemoteContent = async () => {
 		getFaultTypes()
 			.then((list) => applyFaultTypes(list))
 			.catch((error) => console.warn('fault types fallback:', error)),
+		getProductList({ page: 1, size: 50 })
+			.then((data = {}) => {
+				const list = Array.isArray(data) ? data : data.list
+				productList.value = Array.isArray(list) ? list.map(normalizeProduct).filter((item) => item.sn || item.title) : []
+			})
+			.catch((error) => console.warn('product list failed:', error)),
 		getRepairList({ page: 1, size: 30 })
 			.then((data = {}) => {
 				const list = Array.isArray(data) ? data : data.list
-				if (!Array.isArray(list) || !list.length) return
+				if (!Array.isArray(list)) return
+				orderLocalPatches.value = readStorage(localOrderPatchKey, orderLocalPatches.value || {})
 				const normalized = list.map(normalizeOrder).filter((item) => item.id)
-				if (!normalized.length) return
 				orderList.value = normalized
 				trackOrders.value = normalized
 			})
-			.catch((error) => console.warn('repair list fallback:', error))
+			.catch((error) => console.warn('repair list failed:', error))
 	]
 
 	await Promise.allSettled(tasks)
@@ -2464,6 +3536,7 @@ onMounted(() => {
 	}, 80)
 	setTimeout(() => {
 		logBoot('deferred boot start')
+		restoreLocalBusinessState()
 		restoreRepairDraft()
 		loadRemoteContent()
 	}, 220)
@@ -2483,7 +3556,9 @@ onMounted(() => {
 .page-scroll {
 	width: 100%;
 	min-height: 100vh;
+	padding-bottom: 180rpx;
 	background: #E8EEFA;
+	box-sizing: border-box;
 }
 
 .boot-screen {
@@ -2550,7 +3625,7 @@ onMounted(() => {
 
 .module-page {
 	min-height: 100vh;
-	padding-bottom: 48rpx;
+	padding-bottom: 188rpx;
 	background: #E8EEFA;
 	box-sizing: border-box;
 }
@@ -2986,11 +4061,11 @@ onMounted(() => {
 }
 
 .brand-bar {
-	padding: 56rpx 32rpx 28rpx;
+	padding: 60rpx 188rpx 22rpx 34rpx;
 	display: flex;
-	align-items: center;
+	align-items: flex-start;
 	justify-content: space-between;
-	gap: 20rpx;
+	gap: 18rpx;
 	background: #E8EEFA;
 	box-sizing: border-box;
 }
@@ -2999,100 +4074,30 @@ onMounted(() => {
 	min-width: 0;
 	flex: 1;
 	display: flex;
-	align-items: center;
-	gap: 16rpx;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 5rpx;
 }
 
 .brand-logo {
-	width: 104rpx;
-	height: 44rpx;
+	width: 280rpx;
+	height: 88rpx;
 	flex-shrink: 0;
 }
 
-.brand-name {
-	padding-left: 16rpx;
-	border-left: 2rpx solid #C4D1E4;
-	font-size: 30rpx;
-	font-weight: 700;
-	line-height: 1.2;
-	color: #0F1F3A;
-	letter-spacing: 1.2rpx;
+.home-brand-logo {
+	width: 168rpx;
+	height: 38rpx;
 }
 
-.wechat-button {
-	width: 68rpx;
-	height: 68rpx;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	flex-shrink: 0;
-	border: 2rpx solid #BFD6F7;
-	border-radius: 20rpx;
-	background: #FFFFFF;
-	box-sizing: border-box;
-}
-
-.wechat-glyph {
-	position: relative;
-	width: 42rpx;
-	height: 42rpx;
-}
-
-.wechat-glyph::before,
-.wechat-glyph::after {
-	content: "";
-	position: absolute;
-	background: #1AAD19;
-	border-radius: 50%;
-}
-
-.wechat-glyph::before {
-	left: 0;
-	top: 5rpx;
-	width: 30rpx;
-	height: 24rpx;
-}
-
-.wechat-glyph::after {
-	right: 0;
-	bottom: 5rpx;
-	width: 28rpx;
-	height: 22rpx;
-}
-
-.wechat-dot {
-	position: absolute;
-	z-index: 2;
-	width: 4rpx;
-	height: 4rpx;
-	border-radius: 999rpx;
-	background: #FFFFFF;
-}
-
-.dot-left {
-	left: 9rpx;
-	top: 15rpx;
-}
-
-.dot-right {
-	right: 10rpx;
-	bottom: 14rpx;
-}
-
-.hotline-pill {
-	height: 56rpx;
-	padding: 0 22rpx;
-	display: flex;
-	align-items: center;
-	gap: 10rpx;
-	flex-shrink: 0;
-	border-radius: 999rpx;
-	background: #D7E3FA;
-	color: #1E6FE0;
-	font-size: 24rpx;
-	font-weight: 600;
-	white-space: nowrap;
-	box-sizing: border-box;
+.home-brand-subtitle {
+	padding-left: 4rpx;
+	font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+	font-size: 25rpx;
+	font-weight: 800;
+	letter-spacing: 0.6rpx;
+	line-height: 1.18;
+	color: #10264A;
 }
 
 .search-wrap {
@@ -3129,8 +4134,53 @@ onMounted(() => {
 	color: #1E6FE0;
 }
 
+.official-follow-bar {
+	margin: 18rpx 28rpx 0;
+	min-height: 70rpx;
+	padding: 0 20rpx 0 18rpx;
+	display: flex;
+	align-items: center;
+	gap: 14rpx;
+	border: 1rpx solid rgba(30, 111, 224, 0.12);
+	border-radius: 22rpx;
+	background: linear-gradient(135deg, rgba(255, 255, 255, 0.86) 0%, rgba(239, 246, 255, 0.92) 100%);
+	box-shadow: 0 8rpx 24rpx rgba(30, 111, 224, 0.06);
+	box-sizing: border-box;
+}
+
+.official-follow-avatar {
+	width: 44rpx;
+	height: 44rpx;
+	flex-shrink: 0;
+	border-radius: 12rpx;
+	border: 3rpx solid rgba(255, 255, 255, 0.9);
+	box-shadow: 0 6rpx 14rpx rgba(37, 153, 199, 0.16);
+	box-sizing: border-box;
+}
+
+.official-follow-text {
+	min-width: 0;
+	flex: 1;
+	font-size: 24rpx;
+	font-weight: 600;
+	line-height: 1.35;
+	color: #385273;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.official-follow-arrow {
+	width: 14rpx;
+	height: 14rpx;
+	flex-shrink: 0;
+	border-right: 3rpx solid #7EA4D4;
+	border-bottom: 3rpx solid #7EA4D4;
+	transform: rotate(-45deg);
+}
+
 .hero-wrap {
-	padding: 28rpx 28rpx 0;
+	padding: 22rpx 28rpx 0;
 }
 
 .hero-card {
@@ -3505,35 +4555,7 @@ onMounted(() => {
 	margin-bottom: 28rpx;
 	display: flex;
 	align-items: center;
-	justify-content: space-between;
-}
-
-.company-tools {
-	display: flex;
-	align-items: center;
-	gap: 28rpx;
-	color: #324563;
-}
-
-.bell-icon {
-	position: relative;
-	width: 40rpx;
-	height: 40rpx;
-	border: 4rpx solid currentColor;
-	border-bottom: none;
-	border-radius: 22rpx 22rpx 8rpx 8rpx;
-	box-sizing: border-box;
-}
-
-.bell-icon::after {
-	content: "";
-	position: absolute;
-	left: 9rpx;
-	bottom: -11rpx;
-	width: 14rpx;
-	height: 8rpx;
-	border-bottom: 4rpx solid currentColor;
-	border-radius: 0 0 999rpx 999rpx;
+	justify-content: flex-start;
 }
 
 .company-hero {
@@ -3562,12 +4584,8 @@ onMounted(() => {
 	position: absolute;
 	top: 28rpx;
 	right: 28rpx;
-	width: 168rpx;
-	height: 44rpx;
-	padding: 8rpx 16rpx;
-	border-radius: 8rpx;
-	background: rgba(255, 255, 255, 0.92);
-	box-sizing: border-box;
+	width: 320rpx;
+	height: 96rpx;
 }
 
 .company-hero-title-wrap {
@@ -3575,8 +4593,22 @@ onMounted(() => {
 	left: 0;
 	right: 0;
 	bottom: 0;
-	padding: 56rpx 36rpx 36rpx;
+	padding: 72rpx 36rpx 36rpx;
+	display: flex;
+	flex-direction: column;
+	gap: 14rpx;
 	background: linear-gradient(180deg, transparent 0%, rgba(15, 31, 58, 0.55) 100%);
+}
+
+.company-hero-kicker {
+	align-self: flex-start;
+	padding: 8rpx 16rpx;
+	border: 1rpx solid rgba(255, 255, 255, 0.42);
+	border-radius: 999rpx;
+	background: rgba(255, 255, 255, 0.14);
+	font-size: 22rpx;
+	line-height: 1.2;
+	color: #FFFFFF;
 }
 
 .company-hero-title {
@@ -3587,9 +4619,75 @@ onMounted(() => {
 	letter-spacing: 1.2rpx;
 }
 
-.company-desc {
+.company-hero-subtitle {
+	width: 92%;
+	font-size: 24rpx;
+	line-height: 1.58;
+	color: rgba(255, 255, 255, 0.86);
+}
+
+.company-stats-grid {
+	margin-top: 24rpx;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 18rpx;
+}
+
+.company-stat-card {
+	width: calc((100% - 18rpx) / 2);
+	padding: 26rpx 24rpx;
+	border-radius: 24rpx;
+	background: #FFFFFF;
+	box-shadow: 0 2rpx 4rpx rgba(15, 31, 58, 0.04), 0 8rpx 28rpx rgba(30, 111, 224, 0.05);
+	box-sizing: border-box;
+}
+
+.company-stat-value {
 	display: block;
-	padding: 28rpx 8rpx 0;
+	font-size: 42rpx;
+	font-weight: 800;
+	line-height: 1.05;
+	color: #1E6FE0;
+}
+
+.company-stat-label {
+	display: block;
+	margin-top: 10rpx;
+	font-size: 25rpx;
+	font-weight: 700;
+	line-height: 1.2;
+	color: #0F1F3A;
+}
+
+.company-stat-desc {
+	display: block;
+	margin-top: 8rpx;
+	font-size: 21rpx;
+	line-height: 1.3;
+	color: #6B7C97;
+}
+
+.company-intro-card {
+	margin-top: 24rpx;
+	padding: 34rpx 32rpx;
+	border-radius: 28rpx;
+	background: linear-gradient(180deg, #FFFFFF 0%, #F7FAFF 100%);
+	box-shadow: 0 2rpx 4rpx rgba(15, 31, 58, 0.04), 0 8rpx 28rpx rgba(30, 111, 224, 0.05);
+	box-sizing: border-box;
+}
+
+.company-intro-label {
+	display: block;
+	margin-bottom: 18rpx;
+	font-size: 30rpx;
+	font-weight: 800;
+	line-height: 1.2;
+	color: #0F1F3A;
+}
+
+.company-intro-text {
+	display: block;
+	margin-top: 14rpx;
 	font-size: 27rpx;
 	line-height: 1.7;
 	color: #324563;
@@ -3876,6 +4974,46 @@ onMounted(() => {
 	color: #6B7C97;
 }
 
+.company-service-card {
+	padding: 36rpx 32rpx;
+	border-radius: 28rpx;
+	background: linear-gradient(135deg, #123B6D 0%, #1E6FE0 58%, #64B5D4 100%);
+	box-shadow: 0 18rpx 42rpx rgba(30, 111, 224, 0.22);
+	box-sizing: border-box;
+}
+
+.company-service-title {
+	display: block;
+	font-size: 30rpx;
+	font-weight: 800;
+	line-height: 1.3;
+	color: #FFFFFF;
+}
+
+.company-service-desc {
+	display: block;
+	margin-top: 16rpx;
+	font-size: 25rpx;
+	line-height: 1.7;
+	color: rgba(255, 255, 255, 0.86);
+}
+
+.company-service-tags {
+	margin-top: 26rpx;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 14rpx;
+}
+
+.company-service-tags text {
+	padding: 10rpx 18rpx;
+	border: 1rpx solid rgba(255, 255, 255, 0.34);
+	border-radius: 999rpx;
+	background: rgba(255, 255, 255, 0.13);
+	font-size: 22rpx;
+	color: #FFFFFF;
+}
+
 .follow-card {
 	margin-top: 44rpx;
 	padding: 44rpx 36rpx;
@@ -4083,14 +5221,15 @@ onMounted(() => {
 }
 
 .status-grid {
-	padding: 36rpx 12rpx 32rpx;
+	padding: 36rpx 20rpx 32rpx;
 	display: flex;
 	align-items: flex-start;
-	justify-content: space-around;
+	justify-content: space-between;
 }
 
 .status-item {
 	position: relative;
+	width: 25%;
 	display: flex;
 	flex-direction: column;
 	align-items: center;
@@ -4099,12 +5238,12 @@ onMounted(() => {
 
 .status-icon {
 	position: relative;
-	width: 84rpx;
-	height: 84rpx;
+	width: 88rpx;
+	height: 88rpx;
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	border-radius: 24rpx;
+	border-radius: 26rpx;
 }
 
 .badge {
@@ -4210,8 +5349,8 @@ onMounted(() => {
 }
 
 .mine-footer image {
-	width: 260rpx;
-	height: 48rpx;
+	width: 360rpx;
+	height: 108rpx;
 	margin-bottom: 12rpx;
 	opacity: 0.55;
 }
@@ -4316,38 +5455,6 @@ onMounted(() => {
 	font-weight: 600;
 	line-height: 1.1;
 	color: rgba(255, 255, 255, 0.95);
-}
-
-.bottom-tabbar {
-	position: fixed;
-	left: 0;
-	right: 0;
-	bottom: 0;
-	z-index: 40;
-	height: 128rpx;
-	padding: 16rpx 38rpx 36rpx;
-	display: flex;
-	align-items: flex-start;
-	justify-content: space-around;
-	border-top: 2rpx solid #E4ECF7;
-	background: #FFFFFF;
-	box-sizing: border-box;
-}
-
-.tab-item {
-	min-width: 112rpx;
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	gap: 4rpx;
-	color: #94A3B8;
-	font-size: 21rpx;
-	line-height: 1.2;
-}
-
-.tab-item-active {
-	color: #1E6FE0;
-	font-weight: 600;
 }
 
 .modal-mask {
@@ -4485,8 +5592,8 @@ onMounted(() => {
 }
 
 .qr-logo {
-	width: 300rpx;
-	height: 60rpx;
+	width: 380rpx;
+	height: 114rpx;
 	margin-bottom: 28rpx;
 }
 
@@ -4519,6 +5626,18 @@ onMounted(() => {
 	border-radius: 12rpx;
 }
 
+.qr-hint {
+	margin-top: 20rpx;
+	padding: 20rpx 32rpx;
+	background: #F3F8FF;
+	border-radius: 16rpx;
+}
+
+.qr-hint text {
+	font-size: 24rpx;
+	color: #6B7280;
+}
+
 .qr-action {
 	width: 100%;
 	height: 84rpx;
@@ -4534,8 +5653,7 @@ onMounted(() => {
 }
 
 .glyph,
-.mini-icon,
-.tab-glyph {
+.mini-icon {
 	position: relative;
 	flex-shrink: 0;
 	box-sizing: border-box;
@@ -4573,10 +5691,7 @@ onMounted(() => {
 .glyph::after,
 .glyph-extra,
 .mini-icon::before,
-.mini-icon::after,
-.tab-glyph::before,
-.tab-glyph::after,
-.tab-extra {
+.mini-icon::after {
 	content: "";
 	position: absolute;
 	box-sizing: border-box;
@@ -4906,77 +6021,6 @@ onMounted(() => {
 	border-right: 4rpx solid #FFFFFF;
 }
 
-.tab-glyph {
-	width: 48rpx;
-	height: 48rpx;
-	color: currentColor;
-}
-
-.tab-home::before {
-	left: 8rpx;
-	top: 20rpx;
-	width: 32rpx;
-	height: 22rpx;
-	border: 4rpx solid currentColor;
-	border-top: none;
-	border-radius: 0 0 5rpx 5rpx;
-}
-
-.tab-home::after {
-	left: 7rpx;
-	top: 9rpx;
-	width: 34rpx;
-	height: 34rpx;
-	border-left: 4rpx solid currentColor;
-	border-top: 4rpx solid currentColor;
-	transform: rotate(45deg);
-}
-
-.tab-home .tab-extra {
-	left: 19rpx;
-	top: 30rpx;
-	width: 10rpx;
-	height: 12rpx;
-	background: currentColor;
-}
-
-.tab-company::before {
-	left: 8rpx;
-	top: 7rpx;
-	width: 32rpx;
-	height: 36rpx;
-	border: 4rpx solid currentColor;
-	border-radius: 5rpx;
-}
-
-.tab-company::after {
-	left: 16rpx;
-	top: 16rpx;
-	width: 5rpx;
-	height: 5rpx;
-	background: currentColor;
-	box-shadow: 12rpx 0 0 currentColor, 0 12rpx 0 currentColor, 12rpx 12rpx 0 currentColor, 6rpx 24rpx 0 currentColor;
-}
-
-.tab-mine::before {
-	left: 15rpx;
-	top: 7rpx;
-	width: 18rpx;
-	height: 18rpx;
-	border: 4rpx solid currentColor;
-	border-radius: 999rpx;
-}
-
-.tab-mine::after {
-	left: 8rpx;
-	top: 30rpx;
-	width: 32rpx;
-	height: 16rpx;
-	border: 4rpx solid currentColor;
-	border-bottom: none;
-	border-radius: 24rpx 24rpx 0 0;
-}
-
 .module-page-dialog {
 	position: relative;
 	overflow: hidden;
@@ -5086,8 +6130,7 @@ onMounted(() => {
 .product-card,
 .order-card-mini,
 .switch-card,
-.info-line-card,
-.engineer-card {
+.info-line-card {
 	border-radius: 24rpx;
 	background: #FFFFFF;
 	box-shadow: 0 2rpx 4rpx rgba(15, 31, 58, 0.04), 0 8rpx 28rpx rgba(30, 111, 224, 0.05);
@@ -5114,6 +6157,19 @@ onMounted(() => {
 	border-bottom: none;
 }
 
+.field-label-wrap {
+	display: flex;
+	align-items: center;
+	gap: 8rpx;
+	width: 172rpx;
+	flex-shrink: 0;
+}
+
+.field-optional {
+	font-size: 22rpx;
+	color: #9CA3AF;
+}
+
 .repair-field > text,
 .select-row > text:first-child {
 	width: 172rpx;
@@ -5128,8 +6184,30 @@ onMounted(() => {
 	flex: 1;
 	height: 72rpx;
 	font-size: 27rpx;
-	text-align: right;
+	text-align: left;
 	color: #0F1F3A;
+}
+
+.field-actions {
+	display: flex;
+	align-items: center;
+	gap: 20rpx;
+	flex-shrink: 0;
+}
+
+.field-action-icon {
+	width: 64rpx;
+	height: 64rpx;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border-radius: 12rpx;
+	background: #F5F7FA;
+}
+
+.field-action-icon .glyph {
+	width: 36rpx;
+	height: 36rpx;
 }
 
 .field-action {
@@ -5322,27 +6400,57 @@ onMounted(() => {
 .scan-icon {
 	width: 40rpx;
 	height: 40rpx;
+	position: relative;
 }
 
 .scan-icon::before {
 	content: "";
 	position: absolute;
-	inset: 4rpx;
-	border: 3rpx solid #1E6FE0;
-	border-radius: 6rpx;
-	box-sizing: border-box;
+	top: 4rpx;
+	left: 4rpx;
+	right: 4rpx;
+	bottom: 4rpx;
+	border: 2rpx solid #9CA3AF;
+	border-radius: 4rpx;
 }
 
 .scan-icon::after {
 	content: "";
 	position: absolute;
-	left: 10rpx;
-	top: 18rpx;
-	width: 20rpx;
-	height: 3rpx;
-	border-radius: 4rpx;
-	background: #1E6FE0;
-	box-shadow: 0 8rpx 0 #1E6FE0;
+	top: 0;
+	left: 0;
+	width: 10rpx;
+	height: 10rpx;
+	border-top: 3rpx solid #9CA3AF;
+	border-left: 3rpx solid #9CA3AF;
+}
+
+.scan-icon .scan-corner {
+	position: absolute;
+	width: 10rpx;
+	height: 10rpx;
+	border-color: #9CA3AF;
+}
+
+.scan-icon .scan-corner:nth-child(1) {
+	top: 0;
+	right: 0;
+	border-top: 3rpx solid;
+	border-right: 3rpx solid;
+}
+
+.scan-icon .scan-corner:nth-child(2) {
+	bottom: 0;
+	left: 0;
+	border-bottom: 3rpx solid;
+	border-left: 3rpx solid;
+}
+
+.scan-icon .scan-corner:nth-child(3) {
+	bottom: 0;
+	right: 0;
+	border-bottom: 3rpx solid;
+	border-right: 3rpx solid;
 }
 
 .media-area {
@@ -5459,6 +6567,104 @@ onMounted(() => {
 
 .radio-item.on > view {
 	border: 8rpx solid #1E6FE0;
+}
+
+.contact-card-wrap {
+	display: flex;
+	flex-direction: column;
+	gap: 16rpx;
+}
+
+.contact-card-item {
+	padding: 24rpx;
+	display: flex;
+	align-items: flex-start;
+	gap: 20rpx;
+	border: 2rpx solid #1E6FE0;
+	border-radius: 16rpx;
+	box-sizing: border-box;
+}
+
+.contact-card-divider {
+	border-top-left-radius: 16rpx;
+	border-top-right-radius: 16rpx;
+	border-bottom-left-radius: 0;
+	border-bottom-right-radius: 0;
+}
+
+.contact-icon-wrap {
+	width: 48rpx;
+	height: 48rpx;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: #E8F1FD;
+	border-radius: 8rpx;
+	flex-shrink: 0;
+}
+
+.contact-icon-wrap.phone-icon {
+	background: #FFF0E8;
+}
+
+.contact-icon-wrap .glyph-chat::before,
+.contact-icon-wrap .glyph-chat::after {
+	background: #1E6FE0;
+}
+
+.contact-icon-wrap.phone-icon .glyph-phone::before,
+.contact-icon-wrap.phone-icon .glyph-phone::after {
+	border-color: #F59E0B;
+}
+
+.contact-content {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	gap: 8rpx;
+}
+
+.contact-title {
+	font-size: 28rpx;
+	font-weight: 600;
+	color: #1E6FE0;
+}
+
+.contact-desc {
+	font-size: 24rpx;
+	color: #6B7280;
+}
+
+.contact-phone-list {
+	display: flex;
+	flex-direction: column;
+	gap: 12rpx;
+	margin-top: 8rpx;
+	padding-top: 16rpx;
+	border-top: 1rpx solid #E5E7EB;
+}
+
+.phone-item {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8rpx;
+}
+
+.phone-label {
+	font-size: 24rpx;
+	color: #6B7280;
+}
+
+.phone-number {
+	font-size: 26rpx;
+	font-weight: 600;
+	color: #1E6FE0;
+}
+
+.phone-region {
+	font-size: 22rpx;
+	color: #9CA3AF;
 }
 
 .contact-mini-list {
@@ -5606,6 +6812,11 @@ onMounted(() => {
 	color: #FFFFFF;
 	font-size: 30rpx;
 	font-weight: 700;
+}
+
+.bottom-submit.disabled {
+	opacity: 0.68;
+	pointer-events: none;
 }
 
 .tool-sheet-mask {
@@ -5853,13 +7064,18 @@ onMounted(() => {
 	box-sizing: border-box;
 }
 
+.ghost-button.disabled {
+	opacity: 0.62;
+	pointer-events: none;
+}
+
 .track-module {
 	padding-bottom: 48rpx;
 }
 
 .track-search-wrap {
-	padding: 24rpx 28rpx;
-	background: #FFFFFF;
+	padding: 22rpx 28rpx 16rpx;
+	background: transparent;
 	box-sizing: border-box;
 }
 
@@ -5870,7 +7086,8 @@ onMounted(() => {
 	align-items: center;
 	gap: 16rpx;
 	border-radius: 999rpx;
-	background: #F3F8FF;
+	background: rgba(255, 255, 255, 0.92);
+	box-shadow: 0 8rpx 24rpx rgba(30, 111, 224, 0.05);
 	box-sizing: border-box;
 }
 
@@ -5891,11 +7108,36 @@ onMounted(() => {
 	box-sizing: border-box;
 }
 
+.progress-tabs-compact,
+.orders-tabs-classic {
+	white-space: nowrap;
+}
+
+.progress-tabs-compact {
+	padding: 0 28rpx;
+	gap: 0;
+	border-bottom: none;
+	background: transparent;
+}
+
 .progress-tab {
 	position: relative;
 	padding: 16rpx 0 20rpx;
 	font-size: 26rpx;
 	color: #6B7C97;
+}
+
+.progress-tabs-compact .progress-tab,
+.orders-tabs-classic .progress-tab {
+	display: inline-flex;
+	align-items: center;
+	flex-shrink: 0;
+}
+
+.progress-tabs-compact .progress-tab {
+	margin-right: 32rpx;
+	padding: 18rpx 0 16rpx;
+	font-size: 24rpx;
 }
 
 .progress-tab.on {
@@ -5917,6 +7159,10 @@ onMounted(() => {
 
 .module-list {
 	padding: 28rpx;
+}
+
+.track-list {
+	padding-top: 18rpx;
 }
 
 .track-card {
@@ -6061,31 +7307,40 @@ onMounted(() => {
 	color: #1E6FE0;
 }
 
+.track-empty {
+	margin-top: 12rpx;
+	padding: 72rpx 32rpx;
+	border-radius: 28rpx;
+	background: rgba(255, 255, 255, 0.74);
+	border: 2rpx solid rgba(214, 225, 243, 0.92);
+	color: #8A99B2;
+}
+
 .package-module {
 	padding-bottom: 80rpx;
 }
 
 .package-hero {
-	padding: 34rpx;
+	padding: 30rpx;
 	display: flex;
 	align-items: center;
 	gap: 24rpx;
-	border-radius: 30rpx;
-	background: linear-gradient(135deg, #0F766E 0%, #2DD4BF 100%);
-	box-shadow: 0 22rpx 50rpx -24rpx rgba(15, 118, 110, 0.62);
-	color: #FFFFFF;
+	border-radius: 28rpx;
+	background: linear-gradient(135deg, #E6FAF4 0%, #F5FBF9 100%);
+	box-shadow: inset 0 0 0 1rpx rgba(16, 185, 129, 0.12);
+	color: #0F766E;
 	box-sizing: border-box;
 }
 
 .package-hero-icon {
-	width: 96rpx;
-	height: 96rpx;
+	width: 88rpx;
+	height: 88rpx;
 	display: flex;
 	align-items: center;
 	justify-content: center;
 	flex-shrink: 0;
-	border-radius: 28rpx;
-	background: rgba(255, 255, 255, 0.18);
+	border-radius: 26rpx;
+	background: rgba(15, 118, 110, 0.15);
 }
 
 .package-hero > view:last-child {
@@ -6103,14 +7358,144 @@ onMounted(() => {
 
 .package-hero > view:last-child text:last-child {
 	font-size: 24rpx;
-	line-height: 1.6;
-	color: rgba(255, 255, 255, 0.86);
+	line-height: 1.55;
+	color: rgba(15, 118, 110, 0.75);
 }
 
 .package-tip {
 	margin-top: 24rpx;
 	background: #E7F8F4;
 	color: #0F766E;
+}
+
+.package-module .repair-form-card {
+	margin-top: 24rpx;
+	overflow: hidden;
+	border: 2rpx solid rgba(215, 227, 250, 0.52);
+}
+
+.package-module .repair-field {
+	min-height: 104rpx;
+}
+
+.package-module .repair-field > text {
+	color: #253B5B;
+}
+
+.package-module .field-actions {
+	gap: 14rpx;
+}
+
+.package-action-icon {
+	width: 62rpx;
+	height: 62rpx;
+	border-radius: 18rpx;
+	border: 2rpx solid rgba(15, 118, 110, 0.12);
+	background: #F1FAF7;
+	color: #0F766E;
+	box-shadow: 0 8rpx 18rpx rgba(15, 118, 110, 0.07);
+}
+
+.package-paste-action {
+	border-color: rgba(30, 111, 224, 0.12);
+	background: #F4F7FE;
+	color: #1E6FE0;
+	box-shadow: 0 8rpx 18rpx rgba(30, 111, 224, 0.07);
+}
+
+.package-action-icon .glyph {
+	width: 34rpx;
+	height: 34rpx;
+}
+
+.glyph-scan::before {
+	left: 4rpx;
+	top: 4rpx;
+	width: 26rpx;
+	height: 26rpx;
+	border: 3rpx solid currentColor;
+	border-radius: 6rpx;
+	opacity: 0.92;
+}
+
+.glyph-scan::after {
+	left: 9rpx;
+	top: 16rpx;
+	width: 16rpx;
+	height: 3rpx;
+	border-radius: 999rpx;
+	background: currentColor;
+}
+
+.glyph-scan .glyph-extra {
+	left: 14rpx;
+	top: 9rpx;
+	width: 6rpx;
+	height: 6rpx;
+	border-radius: 2rpx;
+	background: currentColor;
+	box-shadow: 0 11rpx 0 -1rpx currentColor;
+}
+
+.glyph-paste::before {
+	left: 7rpx;
+	top: 8rpx;
+	width: 22rpx;
+	height: 24rpx;
+	border: 3rpx solid currentColor;
+	border-radius: 5rpx;
+	opacity: 0.92;
+}
+
+.glyph-paste::after {
+	left: 13rpx;
+	top: 4rpx;
+	width: 10rpx;
+	height: 8rpx;
+	border: 3rpx solid currentColor;
+	border-bottom: none;
+	border-radius: 6rpx 6rpx 0 0;
+}
+
+.glyph-paste .glyph-extra {
+	left: 13rpx;
+	top: 18rpx;
+	width: 10rpx;
+	height: 3rpx;
+	border-radius: 999rpx;
+	background: currentColor;
+	box-shadow: 0 7rpx 0 currentColor;
+	opacity: 0.72;
+}
+
+.package-privacy-note {
+	margin-top: 18rpx;
+	padding: 18rpx 22rpx;
+	display: flex;
+	align-items: center;
+	gap: 16rpx;
+	border-radius: 18rpx;
+	background: rgba(231, 248, 244, 0.62);
+	color: #0F766E;
+	box-sizing: border-box;
+}
+
+.package-privacy-note text:first-child {
+	flex-shrink: 0;
+	padding: 5rpx 14rpx;
+	border-radius: 999rpx;
+	background: rgba(15, 118, 110, 0.1);
+	font-size: 21rpx;
+	font-weight: 700;
+	line-height: 1.3;
+}
+
+.package-privacy-note text:last-child {
+	min-width: 0;
+	flex: 1;
+	font-size: 23rpx;
+	line-height: 1.55;
+	color: rgba(15, 118, 110, 0.74);
 }
 
 .package-result-card {
@@ -6188,6 +7573,350 @@ onMounted(() => {
 	margin-top: 28rpx;
 	border-radius: 24rpx;
 	background: #FFFFFF;
+}
+
+.invoice-module {
+	padding-bottom: 80rpx;
+}
+
+.invoice-hero {
+	padding: 32rpx;
+	display: flex;
+	align-items: center;
+	gap: 24rpx;
+	border-radius: 30rpx;
+	background:
+		linear-gradient(135deg, rgba(30, 111, 224, 0.1) 0%, rgba(14, 165, 233, 0.08) 100%),
+		#FFFFFF;
+	box-shadow: 0 2rpx 4rpx rgba(15, 31, 58, 0.04), 0 8rpx 28rpx rgba(30, 111, 224, 0.05);
+	box-sizing: border-box;
+}
+
+.invoice-hero-icon {
+	width: 88rpx;
+	height: 88rpx;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+	border-radius: 26rpx;
+	background: #FFFFFF;
+	color: #1E6FE0;
+	box-shadow: 0 12rpx 28rpx rgba(30, 111, 224, 0.12);
+}
+
+.invoice-hero > view:last-child {
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 8rpx;
+}
+
+.invoice-hero > view:last-child text:first-child {
+	font-size: 32rpx;
+	font-weight: 800;
+	line-height: 1.3;
+	color: #0F1F3A;
+}
+
+.invoice-hero > view:last-child text:last-child {
+	font-size: 24rpx;
+	line-height: 1.6;
+	color: #5A6C8D;
+}
+
+.invoice-tabs {
+	margin: 28rpx -28rpx 0;
+}
+
+.invoice-list {
+	padding-top: 28rpx;
+}
+
+.invoice-status-board {
+	margin-top: 24rpx;
+	padding: 22rpx;
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 16rpx;
+	border-radius: 26rpx;
+	background: #FFFFFF;
+	box-shadow: 0 2rpx 4rpx rgba(15, 31, 58, 0.04), 0 8rpx 28rpx rgba(30, 111, 224, 0.05);
+	box-sizing: border-box;
+}
+
+.invoice-status-board > view {
+	padding: 20rpx;
+	display: flex;
+	flex-direction: column;
+	gap: 6rpx;
+	border-radius: 20rpx;
+	background: #F7FAFF;
+}
+
+.invoice-status-board text:first-child {
+	font-size: 25rpx;
+	font-weight: 800;
+	color: #0F1F3A;
+}
+
+.invoice-status-board text:last-child {
+	font-size: 21rpx;
+	line-height: 1.4;
+	color: #6B7C97;
+}
+
+.invoice-flow-card {
+	margin-bottom: 24rpx;
+	padding: 24rpx 18rpx;
+	display: grid;
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+	gap: 10rpx;
+	border-radius: 26rpx;
+	background: #FFFFFF;
+	box-shadow: 0 2rpx 4rpx rgba(15, 31, 58, 0.04), 0 8rpx 28rpx rgba(30, 111, 224, 0.05);
+	box-sizing: border-box;
+}
+
+.invoice-flow-step {
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 10rpx;
+}
+
+.invoice-flow-step:not(:last-child)::after {
+	content: "";
+	position: absolute;
+	top: 18rpx;
+	right: -20rpx;
+	width: 38rpx;
+	height: 2rpx;
+	background: #D7E3FA;
+}
+
+.invoice-flow-step view {
+	width: 38rpx;
+	height: 38rpx;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border-radius: 999rpx;
+	background: #E8F1FE;
+	color: #1E6FE0;
+	font-size: 22rpx;
+	font-weight: 800;
+}
+
+.invoice-flow-step text {
+	font-size: 22rpx;
+	line-height: 1.2;
+	color: #6B7C97;
+}
+
+.invoice-order-card,
+.invoice-issued-card {
+	margin-bottom: 22rpx;
+	padding: 28rpx;
+	border-radius: 28rpx;
+	background: #FFFFFF;
+	box-shadow: 0 2rpx 4rpx rgba(15, 31, 58, 0.04), 0 8rpx 28rpx rgba(30, 111, 224, 0.05);
+	box-sizing: border-box;
+}
+
+.invoice-order-head,
+.invoice-issued-head {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 20rpx;
+}
+
+.invoice-order-head > view,
+.invoice-issued-head > view {
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 8rpx;
+}
+
+.invoice-order-head > view text:last-child,
+.invoice-issued-head > view text:first-child {
+	font-size: 29rpx;
+	font-weight: 800;
+	line-height: 1.35;
+	color: #0F1F3A;
+}
+
+.invoice-order-meta,
+.invoice-issued-info {
+	margin-top: 24rpx;
+	padding: 22rpx;
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 18rpx;
+	border-radius: 22rpx;
+	background: #F7FAFF;
+}
+
+.invoice-order-meta view,
+.invoice-issued-info view {
+	display: flex;
+	flex-direction: column;
+	gap: 6rpx;
+}
+
+.invoice-order-meta text:first-child,
+.invoice-issued-info text:first-child {
+	font-size: 22rpx;
+	color: #94A3B8;
+}
+
+.invoice-order-meta text:last-child,
+.invoice-issued-info text:last-child {
+	font-size: 25rpx;
+	font-weight: 700;
+	color: #0F1F3A;
+}
+
+.invoice-order-actions {
+	margin-top: 24rpx;
+	display: flex;
+	align-items: center;
+	gap: 18rpx;
+}
+
+.invoice-order-actions .ghost-button,
+.invoice-order-actions .primary-button {
+	flex: 1;
+	height: 76rpx;
+	font-size: 25rpx;
+}
+
+.invoice-apply {
+	padding-top: 28rpx;
+}
+
+.invoice-form-head {
+	margin-bottom: 22rpx;
+	padding: 28rpx;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 24rpx;
+	border-radius: 28rpx;
+	background: #FFFFFF;
+	box-shadow: 0 2rpx 4rpx rgba(15, 31, 58, 0.04), 0 8rpx 28rpx rgba(30, 111, 224, 0.05);
+	box-sizing: border-box;
+}
+
+.invoice-form-head > view {
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 8rpx;
+}
+
+.invoice-form-head > view text:first-child {
+	font-size: 32rpx;
+	font-weight: 800;
+	color: #0F1F3A;
+}
+
+.invoice-form-head > view text:last-child {
+	font-size: 24rpx;
+	color: #6B7C97;
+}
+
+.invoice-form-head > text {
+	flex-shrink: 0;
+	font-size: 24rpx;
+	font-weight: 700;
+	color: #1E6FE0;
+}
+
+.invoice-form-card {
+	box-shadow: 0 2rpx 4rpx rgba(15, 31, 58, 0.04), 0 8rpx 28rpx rgba(30, 111, 224, 0.05);
+}
+
+.invoice-type-row {
+	padding: 24rpx 28rpx;
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 18rpx;
+	border-bottom: 2rpx solid #F1F5FB;
+	box-sizing: border-box;
+}
+
+.invoice-type-row > view {
+	padding: 20rpx;
+	display: flex;
+	flex-direction: column;
+	gap: 6rpx;
+	border: 2rpx solid #E4ECF7;
+	border-radius: 22rpx;
+	background: #F8FBFF;
+	box-sizing: border-box;
+}
+
+.invoice-type-row > view.on {
+	border-color: #1E6FE0;
+	background: #EEF6FF;
+}
+
+.invoice-type-row text:first-child {
+	font-size: 26rpx;
+	font-weight: 800;
+	color: #0F1F3A;
+}
+
+.invoice-type-row text:last-child {
+	font-size: 21rpx;
+	color: #94A3B8;
+}
+
+.invoice-tip {
+	margin-top: 22rpx;
+	padding: 22rpx 26rpx;
+	border-radius: 22rpx;
+	background: #F3F8FF;
+	font-size: 23rpx;
+	line-height: 1.6;
+	color: #5A6C8D;
+}
+
+.invoice-issued-card {
+	position: relative;
+	overflow: hidden;
+}
+
+.invoice-issued-ribbon {
+	position: absolute;
+	top: 0;
+	right: 0;
+	padding: 10rpx 24rpx;
+	border-bottom-left-radius: 22rpx;
+	background: #E8F8F2;
+	color: #10B981;
+	font-size: 22rpx;
+	font-weight: 800;
+}
+
+.invoice-issued-head {
+	padding-right: 120rpx;
+}
+
+.invoice-issued-head > text {
+	flex-shrink: 0;
+	font-size: 34rpx;
+	font-weight: 900;
+	color: #1E6FE0;
+}
+
+.invoice-issued-head > view text:last-child {
+	font-size: 23rpx;
+	color: #94A3B8;
 }
 
 .detail-hero {
@@ -6316,17 +8045,222 @@ onMounted(() => {
 	color: #6B7C97;
 }
 
+.quote-card,
+.payment-card {
+	padding: 28rpx;
+	border-radius: 28rpx;
+	background: #FFFFFF;
+	box-shadow: 0 2rpx 4rpx rgba(15, 31, 58, 0.04), 0 8rpx 28rpx rgba(30, 111, 224, 0.05);
+	box-sizing: border-box;
+}
+
+.quote-head,
+.payment-head,
+.authorization-panel {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 20rpx;
+}
+
+.quote-head > view,
+.payment-head > view,
+.authorization-panel > view {
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 8rpx;
+}
+
+.quote-head > view text:first-child,
+.payment-head > view text:first-child,
+.authorization-panel > view text:first-child {
+	font-size: 30rpx;
+	font-weight: 800;
+	color: #0F1F3A;
+}
+
+.quote-head > view text:last-child,
+.payment-head > view text:last-child,
+.authorization-panel > view text:last-child {
+	font-size: 23rpx;
+	line-height: 1.5;
+	color: #6B7C97;
+}
+
+.quote-items {
+	margin-top: 24rpx;
+	display: flex;
+	flex-direction: column;
+	gap: 16rpx;
+}
+
+.quote-item-row {
+	padding: 22rpx;
+	display: flex;
+	justify-content: space-between;
+	gap: 20rpx;
+	border-radius: 22rpx;
+	background: #F7FAFF;
+	box-sizing: border-box;
+}
+
+.quote-item-main,
+.quote-item-fees {
+	display: flex;
+	flex-direction: column;
+	gap: 8rpx;
+}
+
+.quote-item-main {
+	min-width: 0;
+	flex: 1;
+}
+
+.quote-item-main text:first-child {
+	font-size: 27rpx;
+	font-weight: 800;
+	color: #0F1F3A;
+}
+
+.quote-item-main text:last-child,
+.quote-item-fees text {
+	font-size: 22rpx;
+	line-height: 1.4;
+	color: #6B7C97;
+}
+
+.quote-item-fees {
+	align-items: flex-end;
+	flex-shrink: 0;
+}
+
+.quote-empty {
+	margin-top: 24rpx;
+	padding: 26rpx;
+	border-radius: 22rpx;
+	background: #F7FAFF;
+	font-size: 24rpx;
+	line-height: 1.6;
+	color: #6B7C97;
+}
+
+.quote-summary,
+.payment-account {
+	margin-top: 24rpx;
+	padding: 22rpx;
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 18rpx;
+	border-radius: 22rpx;
+	background: #FFF7E6;
+	box-sizing: border-box;
+}
+
+.quote-summary > view,
+.payment-account > view {
+	display: flex;
+	flex-direction: column;
+	gap: 6rpx;
+}
+
+.quote-summary text:first-child,
+.payment-account text:first-child {
+	font-size: 22rpx;
+	color: #9A6A1F;
+}
+
+.quote-summary text:last-child,
+.payment-account text:last-child {
+	font-size: 27rpx;
+	font-weight: 800;
+	color: #0F1F3A;
+}
+
+.quote-summary .quote-total text:last-child {
+	color: #D97706;
+}
+
+.authorization-panel {
+	margin-top: 24rpx;
+	padding: 22rpx;
+	border-radius: 22rpx;
+	background: #F3F8FF;
+}
+
+.detail-action-button,
+.payment-upload-button {
+	margin-top: 24rpx;
+	height: 82rpx;
+	font-size: 26rpx;
+}
+
+.payment-proof-grid {
+	margin-top: 24rpx;
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	gap: 16rpx;
+}
+
+.payment-proof-thumb {
+	padding: 10rpx;
+	display: flex;
+	flex-direction: column;
+	gap: 8rpx;
+	border-radius: 18rpx;
+	background: #F7FAFF;
+	box-sizing: border-box;
+}
+
+.payment-proof-image {
+	width: 100%;
+	height: 136rpx;
+	border-radius: 14rpx;
+	background: #E4ECF7;
+}
+
+.payment-proof-thumb text {
+	font-size: 20rpx;
+	text-align: center;
+	color: #6B7C97;
+}
+
 .info-line-card,
-.engineer-card {
+.invoice-detail-card {
 	padding: 28rpx;
 	display: flex;
 	align-items: center;
 	gap: 24rpx;
 }
 
-.info-line-icon,
-.engineer-avatar,
-.circle-action {
+.invoice-detail-card {
+	align-items: flex-start;
+}
+
+.invoice-detail-actions {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-end;
+	gap: 14rpx;
+	flex-shrink: 0;
+}
+
+.invoice-mini-button {
+	min-width: 128rpx;
+	height: 52rpx;
+	padding: 0 20rpx;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border-radius: 999rpx;
+	background: #E8F1FE;
+	color: #1E6FE0;
+	font-size: 22rpx;
+	font-weight: 800;
+	box-sizing: border-box;
+}
+
+.info-line-icon {
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -6362,31 +8296,6 @@ onMounted(() => {
 	font-size: 23rpx;
 	line-height: 1.4;
 	color: #6B7C97;
-}
-
-.engineer-avatar {
-	width: 88rpx;
-	height: 88rpx;
-	border-radius: 999rpx;
-	background: linear-gradient(135deg, #BFD6F7 0%, #1E6FE0 100%);
-	color: #FFFFFF;
-	font-size: 32rpx;
-	font-weight: 800;
-}
-
-.circle-action {
-	width: 64rpx;
-	height: 64rpx;
-	border: 2rpx solid #BFD6F7;
-	border-radius: 999rpx;
-	background: #FFFFFF;
-	color: #1E6FE0;
-}
-
-.circle-action.primary {
-	border-color: transparent;
-	background: #1E6FE0;
-	color: #FFFFFF;
 }
 
 .survey-module {
@@ -6517,38 +8426,22 @@ onMounted(() => {
 .survey-actions {
 	margin-top: 36rpx;
 	display: flex;
-	gap: 20rpx;
-}
-
-.survey-primary {
-	flex: 1;
-	height: 88rpx;
-	display: flex;
-	align-items: center;
 	justify-content: center;
-	border-radius: 999rpx;
-	font-size: 27rpx;
-	font-weight: 700;
-}
-
-.survey-primary {
-	background: linear-gradient(180deg, #2A6CD3 0%, #0A4FB8 100%);
-	box-shadow: 0 20rpx 44rpx -20rpx rgba(10, 79, 184, 0.55);
-	color: #FFFFFF;
 }
 
 .survey-secondary {
-	flex: 1;
-	height: 88rpx;
+	min-width: 240rpx;
+	height: 80rpx;
 	display: flex;
 	align-items: center;
 	justify-content: center;
 	border-radius: 999rpx;
-	font-size: 27rpx;
-	font-weight: 700;
+	font-size: 28rpx;
+	font-weight: 600;
 	background: #F3F8FF;
 	border: 2rpx solid #D7E3FA;
 	color: #1E6FE0;
+	padding: 0 40rpx;
 }
 
 .diag-hero-card {
@@ -7140,28 +9033,177 @@ onMounted(() => {
 	color: #0F1F3A;
 }
 
+.address-header {
+	padding: 28rpx 32rpx;
+	background: #FFFFFF;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	border-bottom: 1rpx solid #F1F5F9;
+}
+
+.address-back {
+	width: 48rpx;
+	height: 48rpx;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.back-arrow {
+	width: 16rpx;
+	height: 16rpx;
+	border-left: 3rpx solid #0F1F3A;
+	border-top: 3rpx solid #0F1F3A;
+	transform: rotate(-45deg);
+}
+
+.address-title {
+	font-size: 32rpx;
+	font-weight: 600;
+	color: #0F1F3A;
+	text-align: center;
+}
+
+.address-placeholder {
+	width: 48rpx;
+}
+
+.address-form {
+	margin: 24rpx;
+	background: #FFFFFF;
+	border-radius: 16rpx;
+	padding: 0 28rpx;
+	box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.04);
+}
+
+.address-field {
+	display: flex;
+	align-items: center;
+	padding: 28rpx 0;
+	border-bottom: 1rpx solid #F5F7FA;
+	position: relative;
+}
+
+.address-field:last-child {
+	border-bottom: none;
+}
+
+.field-label {
+	width: 160rpx;
+	flex-shrink: 0;
+	font-size: 28rpx;
+	color: #324563;
+	font-weight: 500;
+}
+
+.required-star {
+	color: #E5484D;
+	margin-right: 4rpx;
+}
+
+.field-input {
+	flex: 1;
+	font-size: 28rpx;
+	color: #0F1F3A;
+	text-align: left;
+}
+
+.field-arrow {
+	width: 14rpx;
+	height: 14rpx;
+	border-right: 2rpx solid #94A3B8;
+	border-bottom: 2rpx solid #94A3B8;
+	transform: rotate(-45deg);
+	margin-left: 16rpx;
+	flex-shrink: 0;
+}
+
+.address-switch {
+	margin: 0 24rpx 24rpx;
+	background: #FFFFFF;
+	border-radius: 16rpx;
+	padding: 28rpx;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.04);
+}
+
+.switch-left {
+	display: flex;
+	flex-direction: column;
+	gap: 8rpx;
+}
+
+.switch-title {
+	font-size: 28rpx;
+	font-weight: 500;
+	color: #324563;
+}
+
+.address-actions {
+	padding: 24rpx;
+	display: flex;
+	gap: 20rpx;
+}
+
+.address-btn {
+	flex: 1;
+	height: 88rpx;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border-radius: 44rpx;
+	font-size: 30rpx;
+	font-weight: 600;
+}
+
+.address-btn-primary {
+	background: linear-gradient(180deg, #2A6CD3 0%, #0A4FB8 100%);
+	color: #FFFFFF;
+	box-shadow: 0 12rpx 32rpx -12rpx rgba(10, 79, 184, 0.45);
+}
+
+.address-btn-secondary {
+	background: #FFFFFF;
+	color: #E5484D;
+	border: 2rpx solid #FEE2E2;
+}
+
 .address-copy text:not(:first-child) {
 	font-size: 24rpx;
 	line-height: 1.5;
 	color: #6B7C97;
 }
 
-.address-actions {
-	margin-top: 20rpx;
-	display: flex;
-	gap: 16rpx;
-}
-
-.address-actions .ghost-button,
-.address-actions .primary-button {
-	flex: 1;
-	height: 72rpx;
-	font-size: 25rpx;
-}
-
 .orders-tabs {
 	padding-top: 0;
 	gap: 30rpx;
+}
+
+.orders-tabs-classic {
+	padding: 0 28rpx;
+	gap: 0;
+	background: transparent;
+	border-bottom: none;
+}
+
+.orders-tab-item {
+	margin-right: 32rpx;
+	padding: 18rpx 0 18rpx;
+	gap: 6rpx;
+	font-size: 24rpx;
+}
+
+.orders-tab-count {
+	font-size: 24rpx;
+	font-weight: 600;
+	color: inherit;
+}
+
+.orders-content-classic {
+	padding-top: 18rpx;
 }
 
 .order-card-mini {
@@ -7203,6 +9245,48 @@ onMounted(() => {
 .order-card-mini > view:last-child text:last-child {
 	font-size: 30rpx;
 	font-weight: 800;
+	color: #0F1F3A;
+}
+
+.order-card-classic {
+	padding: 32rpx 30rpx;
+	border-radius: 30rpx;
+	background: rgba(255, 255, 255, 0.96);
+	box-shadow: 0 10rpx 28rpx rgba(79, 112, 168, 0.08);
+}
+
+.order-card-main {
+	min-width: 0;
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	gap: 10rpx;
+}
+
+.order-card-title {
+	font-size: 28rpx;
+	font-weight: 700;
+	line-height: 1.35;
+	color: #0F1F3A;
+}
+
+.order-card-date {
+	font-size: 23rpx;
+	line-height: 1.3;
+	color: #6B7C97;
+}
+
+.order-card-side {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-end;
+	gap: 18rpx;
+}
+
+.order-card-price {
+	font-size: 30rpx;
+	font-weight: 800;
+	line-height: 1.2;
 	color: #0F1F3A;
 }
 
@@ -7491,6 +9575,101 @@ onMounted(() => {
 	color: #94A3B8;
 }
 
+.feedback-history {
+	margin-top: 34rpx;
+}
+
+.feedback-ticket-card {
+	margin-bottom: 20rpx;
+	padding: 28rpx;
+	border-radius: 28rpx;
+	background: #FFFFFF;
+	box-shadow: 0 2rpx 4rpx rgba(15, 31, 58, 0.04), 0 8rpx 28rpx rgba(30, 111, 224, 0.05);
+	box-sizing: border-box;
+}
+
+.feedback-ticket-head {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 20rpx;
+}
+
+.feedback-ticket-head > view {
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 8rpx;
+}
+
+.feedback-ticket-head > view text:first-child {
+	font-size: 29rpx;
+	font-weight: 800;
+	color: #0F1F3A;
+}
+
+.feedback-ticket-head > view text:last-child {
+	font-size: 22rpx;
+	color: #94A3B8;
+}
+
+.feedback-ticket-meta {
+	margin-top: 20rpx;
+	padding: 20rpx;
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 16rpx;
+	border-radius: 20rpx;
+	background: #F7FAFF;
+}
+
+.feedback-ticket-meta view {
+	display: flex;
+	flex-direction: column;
+	gap: 6rpx;
+}
+
+.feedback-ticket-meta text:first-child {
+	font-size: 21rpx;
+	color: #94A3B8;
+}
+
+.feedback-ticket-meta text:last-child {
+	font-size: 24rpx;
+	font-weight: 700;
+	color: #0F1F3A;
+}
+
+.feedback-ticket-content {
+	display: block;
+	margin-top: 20rpx;
+	font-size: 25rpx;
+	line-height: 1.6;
+	color: #324563;
+}
+
+.feedback-reply {
+	margin-top: 20rpx;
+	padding: 22rpx;
+	display: flex;
+	flex-direction: column;
+	gap: 8rpx;
+	border-radius: 20rpx;
+	background: #F3F8FF;
+}
+
+.feedback-reply text:first-child {
+	font-size: 23rpx;
+	font-weight: 800;
+	color: #1E6FE0;
+}
+
+.feedback-reply text:last-child {
+	font-size: 23rpx;
+	line-height: 1.5;
+	color: #5A6C8D;
+}
+
 .login-module {
 	padding-top: 80rpx;
 	display: flex;
@@ -7547,6 +9726,13 @@ onMounted(() => {
 	background: #07C160;
 	box-shadow: 0 16rpx 36rpx -12rpx rgba(7, 193, 96, 0.45);
 	color: #FFFFFF;
+	border: none;
+	line-height: 100rpx;
+	padding: 0;
+}
+
+.wechat-login::after {
+	border: none;
 }
 
 .phone-login {
@@ -7554,6 +9740,11 @@ onMounted(() => {
 	border: 2rpx solid #E4ECF7;
 	background: #FFFFFF;
 	color: #0F1F3A;
+}
+
+.phone-login.disabled {
+	color: #94A3B8;
+	background: #F6F8FC;
 }
 
 .login-agree {

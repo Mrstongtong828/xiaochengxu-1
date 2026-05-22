@@ -88,6 +88,10 @@ const looseToNumber = (val) => {
   const n2 = parseFloat(val);
   return isNaN(n2) ? val : n2;
 };
+const toNumber = (val) => {
+  const n2 = isString(val) ? Number(val) : NaN;
+  return isNaN(n2) ? val : n2;
+};
 function normalizeStyle(value) {
   if (isArray(value)) {
     const res = {};
@@ -1342,6 +1346,9 @@ function isReadonly(value) {
 }
 function isShallow(value) {
   return !!(value && value["__v_isShallow"]);
+}
+function isProxy(value) {
+  return isReactive(value) || isReadonly(value);
 }
 function toRaw(observed) {
   const raw = observed && observed["__v_raw"];
@@ -3766,6 +3773,12 @@ const Static = Symbol.for("v-stc");
 function isVNode(value) {
   return value ? value.__v_isVNode === true : false;
 }
+const InternalObjectKey = `__vInternal`;
+function guardReactiveProps(props) {
+  if (!props)
+    return null;
+  return isProxy(props) || InternalObjectKey in props ? extend({}, props) : props;
+}
 const emptyAppContext = createAppContext();
 let uid = 0;
 function createComponentInstance(vnode, parent, suspense) {
@@ -5023,6 +5036,11 @@ function initApp(app) {
   }
 }
 const propsCaches = /* @__PURE__ */ Object.create(null);
+function renderProps(props) {
+  const { uid: uid2, __counter } = getCurrentInstance();
+  const propsId = (propsCaches[uid2] || (propsCaches[uid2] = [])).push(guardReactiveProps(props)) - 1;
+  return uid2 + "," + propsId + "," + __counter;
+}
 function pruneComponentPropsCache(uid2) {
   delete propsCaches[uid2];
 }
@@ -5205,12 +5223,35 @@ function vFor(source, renderItem) {
   }
   return ret;
 }
+function withModelModifiers(fn2, { number, trim }, isComponent = false) {
+  if (isComponent) {
+    return (...args) => {
+      if (trim) {
+        args = args.map((a2) => a2.trim());
+      } else if (number) {
+        args = args.map(toNumber);
+      }
+      return fn2(...args);
+    };
+  }
+  return (event) => {
+    const value = event.detail.value;
+    if (trim) {
+      event.detail.value = value.trim();
+    } else if (number) {
+      event.detail.value = toNumber(value);
+    }
+    return fn2(event);
+  };
+}
 const o$1 = (value, key) => vOn(value, key);
 const f$1 = (source, renderItem) => vFor(source, renderItem);
 const s$1 = (value) => stringifyStyle(value);
 const e$1 = (target, ...sources) => extend(target, ...sources);
 const n$1 = (value) => normalizeClass(value);
 const t$1 = (val) => toDisplayString(val);
+const p$1 = (props) => renderProps(props);
+const m$1 = (fn2, modifiers, isComponent = false) => withModelModifiers(fn2, modifiers, isComponent);
 function createApp$1(rootComponent, rootProps = null) {
   rootComponent && (rootComponent.mpType = "app");
   return createVueApp(rootComponent, rootProps).use(plugin);
@@ -7075,9 +7116,9 @@ function isConsoleWritable() {
   return isWritable;
 }
 function initRuntimeSocketService() {
-  const hosts = "10.140.123.136,127.0.0.1";
+  const hosts = "192.168.0.100,127.0.0.1";
   const port = "8090";
-  const id = "mp-weixin_LKPaNH";
+  const id = "mp-weixin_O3bIc0";
   const lazy = typeof swan !== "undefined";
   let restoreError = lazy ? () => {
   } : initOnError();
@@ -8037,6 +8078,27 @@ const pages = [
       navigationStyle: "custom",
       navigationBarTitleText: "登录"
     }
+  },
+  {
+    path: "pages/company/index",
+    style: {
+      navigationStyle: "custom",
+      navigationBarTitleText: "公司介绍"
+    }
+  },
+  {
+    path: "pages/mine/index",
+    style: {
+      navigationStyle: "custom",
+      navigationBarTitleText: "个人中心"
+    }
+  },
+  {
+    path: "pages/address/index",
+    style: {
+      navigationStyle: "custom",
+      navigationBarTitleText: "收货地址管理"
+    }
   }
 ];
 const globalStyle = {
@@ -8340,7 +8402,7 @@ class v {
 function I(e2) {
   return e2 && "string" == typeof e2 ? JSON.parse(e2) : e2;
 }
-const S = true, b = "mp-weixin", A = I(define_process_env_UNI_SECURE_NETWORK_CONFIG_default), T = b, C = I(""), P = I("[]") || [];
+const S = true, b = "mp-weixin", A = I(define_process_env_UNI_SECURE_NETWORK_CONFIG_default), T = b, C = I('{"address":["127.0.0.1","192.168.0.100"],"servePort":7000,"debugPort":9000,"initialLaunchType":"remote","skipFiles":["<node_internals>/**","E:/HBuilderX.5.07.2026041006/HBuilderX/plugins/unicloud/**/*.js"]}'), P = I('[{"provider":"aliyun","spaceName":"test-web","spaceId":"mp-f0350304-ff3b-4fb8-afcb-ac5e3253da2a","clientSecret":"978JtX2gi2WEdt4oqgxUEQ==","endpoint":"https://api.next.bspapp.com","failoverEndpoint":""}]') || [];
 let E = "";
 try {
   E = "__UNI__C99308C";
@@ -11039,6 +11101,14 @@ let yr = new class {
   }();
 })();
 var _r = yr;
+const createLifeCycleHook = (lifecycle, flag = 0) => (hook, target = getCurrentInstance()) => {
+  !isInSSRComponentSetup && injectHook(lifecycle, hook, target);
+};
+const onLoad = /* @__PURE__ */ createLifeCycleHook(
+  ON_LOAD,
+  2
+  /* HookFlags.PAGE */
+);
 exports._export_sfc = _export_sfc;
 exports._r = _r;
 exports.computed = computed;
@@ -11046,9 +11116,12 @@ exports.createSSRApp = createSSRApp;
 exports.e = e$1;
 exports.f = f$1;
 exports.index = index;
+exports.m = m$1;
 exports.n = n$1;
 exports.o = o$1;
+exports.onLoad = onLoad;
 exports.onMounted = onMounted;
+exports.p = p$1;
 exports.ref = ref;
 exports.s = s$1;
 exports.t = t$1;

@@ -11,14 +11,15 @@ exports.main = async (event, context) => {
       .limit(1)
       .get()
 
-    if (!tokenRes.data.length) {
+    const tokenRecord = tokenRes.data[0]
+    if (!tokenRecord || tokenRecord.revoked || (tokenRecord.expireTime && tokenRecord.expireTime < Date.now())) {
       return {
         code: 401,
-        message: '请先登录'
+        message: '登录已过期，请重新登录'
       }
     }
 
-    const userId = tokenRes.data[0].userId
+    const userId = tokenRecord.userId
 
     let whereCondition = { userId }
     if (status) {
