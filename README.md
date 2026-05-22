@@ -1,86 +1,138 @@
-# 牙医仪器检修小程序
+# 牙医仪器检修用户端
 
-## 项目简介
+这是一个基于 `uni-app + Vue 3` 的微信小程序前端，面向牙医仪器维修场景，主要给客户使用，用于报修、查进度、查包裹、看政策和联系客服。
 
-这是一个基于 `uni-app + Vue 3` 的微信小程序项目，面向牙医仪器维修场景，支持客户在线提交报修、查看维修进度、查询包裹签收状态，并获取寄修指引与客服信息。
+## 重要提示：前端进度与交接边界
 
-## 当前功能
+当前仓库已经完成“小程序最新版前端 + 原 uniCloud 后台”的融合：
 
-- `立即报修`：支持多产品报修、购买日期选择、购买凭证上传、故障图片/视频上传。
-- `保存草稿`：报修表单支持本地草稿保存，避免用户中途退出后内容丢失。
-- `维修进度`：可按工单查看维修流转状态。
-- `包裹查询`：客户可输入快递单号，查询包裹是否已签收、是否已录入系统、当前处理状态。
-- `收件信息复制`：支持逐项复制和一键复制寄修收件地址。
-- `故障自诊 / 保修政策 / 收费标准 / 联系客服`：以首页模块形式展示。
+- 旧版小程序前端已经替换为最新版用户端前端。
+- 原仓库中的 `uniCloud-alipay/` 后台代码、数据库结构和索引说明已保留。
+- 前端页面、交互、路由、底部导航、地址管理页、用户中心页和首页业务模块已整理完成。
+- 已执行 `npm run check`，微信小程序生产构建通过。
+- 后端/前端同学接手后，重点不是继续替换前端，而是按接口清单补齐后端数据、状态流转和云环境配置。
 
-## 当前页面结构
+当前前端进度可以按下面理解：
 
-当前项目以首页单页承载主要业务模块：
+| 模块 | 前端进度 | 后端需要关注 |
+| --- | --- | --- |
+| 微信手机号登录 | 页面已接入，走 `cicada-client-user.loginWithWechat({ code })` 云对象 | 配置 `WX_APPID`、`WX_SECRET`，确认 `token + userInfo` 返回 |
+| 报修提交 | 页面、表单校验、图片/视频上传入口已完成 | 实现 `/repair/submit`，保存工单和产品明细 |
+| 维修进度 | 列表、详情、状态展示已完成 | 实现 `/repair/list`、`/repair/detail`，返回状态和时间线 |
+| 包裹查询 | 查询入口和结果展示已完成 | 实现 `/package/query`，维护快递单号签收和处理状态 |
+| 政策/客服 | 展示入口已完成 | 实现政策、客服和联系方式接口 |
+| 地址/投诉/发票/产品 | 前端入口和部分本地体验逻辑已预留 | 可分阶段补接口，详见 `后端对接任务清单.md` |
 
-- `pages/index/index.vue`：主入口页面，包含报修、进度、包裹查询、故障自诊、联系客服等模块。
-- `pages/login/index.vue`：登录页。
+请同学优先阅读：
 
-下面两个页面文件目前存在，但 **没有在 `pages.json` 中注册**，默认不会作为独立路由打开：
+- `README.md`
+- `后端对接任务清单.md`
+- `api/content.js`
+- `pages/index/index.vue`
+- `pages/login/index.vue`
+- `uniCloud-alipay/cloudfunctions/cicada-client-user/index.obj.js`
+- `uniCloud-alipay/database/INDEXES.md`
 
-- `pages/company/index.vue`
-- `pages/mine/index.vue`
+## 交接说明
 
-如果后续要启用这两个独立页面，需要同步更新 `pages.json`。
+- 前端主流程现在以 `api/content.js` 的 HTTP 接口为主。
+- 登录页目前仍保留 `uniCloud.importObject('cicada-client-user')` 的云对象调用方式。
+- `api/auth.js`、`api/repair.js` 属于旧版兼容接口，后续可以逐步统一。
 
-## 技术栈
+## 项目运行
 
-- 前端：`uni-app`、`Vue 3`
-- 运行端：微信小程序
-- 请求层：`uni.request` + 自定义封装
-- 后端对接方式：
-  - 旧版云函数/混合模式：`api/auth.js`、`api/repair.js`
-  - 当前首页主流程 HTTP 接口：`api/content.js`
+环境要求：
 
-## 目录结构
+- Node.js `>= 20.19.0`
+- 微信开发者工具
+- HBuilderX（可选）
+
+安装依赖：
+
+```bash
+npm install
+```
+
+本地配置接口地址：
+
+```bash
+cp .env.example .env.local
+```
+
+Windows PowerShell：
+
+```powershell
+Copy-Item .env.example .env.local
+```
+
+默认接口地址见 `utils/request.js`，优先读取 `VITE_API_BASE_URL`。
+
+开发运行：
+
+```bash
+npm run dev:mp-weixin
+```
+
+生产构建：
+
+```bash
+npm run build:mp-weixin
+```
+
+交接检查：
+
+```bash
+npm run check
+```
+
+输出目录：
+
+- 开发版：`unpackage/dist/dev/mp-weixin`
+- 生产版：`unpackage/dist/build/mp-weixin`
+
+## 页面入口
+
+`pages.json` 当前已注册页面：
+
+- `pages/index/index`
+- `pages/login/index`
+- `pages/company/index`
+- `pages/mine/index`
+- `pages/address/index`
+
+## 主要目录
 
 ```text
-├── api/
-│   ├── auth.js                  # 旧版登录/云函数混合接口
-│   ├── repair.js                # 旧版报修/云函数混合接口
-│   ├── product.js               # 产品相关接口
-│   └── content.js               # 当前首页主流程使用的 HTTP 接口
-├── cloudfunctions/              # uniCloud 云函数
-├── pages/
-│   ├── index/index.vue          # 首页主入口
-│   ├── login/index.vue          # 登录页
-│   ├── company/index.vue        # 预留页面，未注册路由
-│   └── mine/index.vue           # 预留页面，未注册路由
-├── static/                      # 静态资源
-├── store/                       # 状态管理
-├── utils/
-│   ├── cloud.js                 # 云函数调用封装
-│   └── request.js               # HTTP 请求封装
-├── unpackage/dist/dev/mp-weixin/ # 微信小程序编译输出
-├── pages.json
-├── manifest.json
-└── 后端对接任务清单.md
+api/                    接口封装
+pages/                  页面
+store/                  状态管理
+utils/                  请求和云函数封装
+config/                 图片和资源配置
+static/                 静态资源
+uniCloud-alipay/        uniCloud 后端
+cloudfunctions/         旧版云函数兼容目录
+unpackage/              编译输出
 ```
 
-## 接口对接说明
+## 请求约定
 
-### 当前请求配置
+- HTTP 统一返回：`{ code, message, data }`
+- `code = 0` 表示成功
+- 请求头自动带 `Authorization: Bearer {token}`
+- 遇到 `401 / 1004 / 100401`，前端会清理登录态
 
-- HTTP 基础地址配置在 [utils/request.js](./utils/request.js)
-- 当前默认 `baseURL` 为：
+## 当前后端对接重点
 
-```js
-export const baseURL = 'https://api.cisco-d.com/api/v1'
-```
+### 登录
 
-### 重要说明
+- 登录页使用 `cicada-client-user`
+- 需要返回 `token` 和 `userInfo`
+- 若要统一成 HTTP，也可以改成 `/auth/login`、`/auth/wechat-login`
 
-旧版文档里提到的 `USE_CLOUD` 开关 **只影响** `api/auth.js` 和 `api/repair.js` 这类旧接口文件，不影响当前首页主流程使用的 `api/content.js`。
+### 首页主流程
 
-也就是说，如果你现在对接的是首页这套 UI，后端重点需要实现的是 `api/content.js` 中的 HTTP 接口，而不只是切换 `USE_CLOUD`。
+当前前端主要使用这些接口：
 
-### 当前首页主流程重点接口
-
-- `POST /auth/login`
 - `POST /repair/submit`
 - `GET /repair/list`
 - `GET /repair/detail`
@@ -92,86 +144,33 @@ export const baseURL = 'https://api.cisco-d.com/api/v1'
 - `GET /policy/warranty`
 - `GET /policy/fee`
 
-详细接口与数据结构请参考 [后端对接任务清单.md](./后端对接任务清单.md)。
+说明：当前微信手机号登录已统一走 `cicada-client-user.loginWithWechat({ code })` 云对象。若后端后续希望登录也改成 HTTP，再补 `/auth/login` 或 `/auth/wechat-login` 并同步改前端登录调用。
 
-## 包裹查询说明
+### 交互预留
 
-前端已经提供 `包裹查询` 入口，位于首页 `自助查询` 模块内。
+前端还预留了这些能力，后端接入后可完善：
 
-当前交互规则：
+- 发票申请与列表
+- 收货地址管理
+- 投诉建议
+- 产品列表
+- 故障知识库
+- 管理后台相关接口
 
-- 客户输入 `快递单号` 进行查询。
-- 可选输入 `手机号后四位` 用于身份核验。
-- 只有后台签收并录入快递单号后，前端才能查询到对应包裹状态。
+## 后端补充建议
 
-后端建议返回的信息至少包括：
+- 优先确认 `uniCloud-alipay/database/INDEXES.md` 里的索引是否已创建。
+- `config/cicada-assets.js` 里的图片链接需要替换成可访问的 CDN 地址。
+- 微信登录云对象需要在 uniCloud 环境变量中配置 `WX_APPID` 和 `WX_SECRET`，不要把 AppSecret 写进代码。
+- 如果登录方式要统一，建议先确认前端登录页是否继续保留云对象方式。
 
-- `trackingNo`
-- `company`
-- `status`
-- `orderId`
-- `timeline`
+## 相关文件
 
-如果后端暂未开放该接口，前端会提示“包裹查询接口未开放”。
-
-## 报修表单说明
-
-当前报修表单已经按真实用户交互进行了调整：
-
-- `购买日期` 为可点击的日期选择器。
-- `购买凭证` 为真实上传入口，支持预览与删除。
-- 提交报修时会携带 `voucherImages` 字段。
-- `保存草稿` / `清空重填` 在底部 `工具` 面板中。
-- 草稿默认保存在本地缓存键 `repairDraft`。
-
-## 本地开发
-
-1. 使用 `HBuilderX` 打开项目根目录。
-2. 选择 `运行 -> 运行到小程序模拟器 -> 微信开发者工具`。
-3. 编译输出目录为：
-
-```text
-unpackage/dist/dev/mp-weixin
-```
-
-## CDN 图片资源
-
-为了避免微信小程序主包过大，公司图片、海报和二维码不再放在 `static/cicada`，而是放在 `cdn-assets/cicada` 作为待上传资源。
-
-操作流程：
-
-1. 将 `cdn-assets/cicada` 中的图片上传到 uniCloud 云存储。
-2. 获取每张图片的 HTTPS 链接。
-3. 在 `config/cicada-assets.js` 中替换占位链接。
-4. 在微信公众平台 `开发管理 -> 服务器域名 -> downloadFile 合法域名` 添加对应 CDN 域名。
-
-详细说明见 [cdn-assets/README.md](./cdn-assets/README.md)。
-
-## 给客户预览
-
-如果项目还没有正式发布，但需要让客户先看效果，建议按下面方式操作：
-
-1. 在微信公众平台把客户微信号加入 `体验成员`。
-2. 在微信开发者工具中生成预览二维码，发给客户扫码查看。
-
-客户侧通常需要你提供：
-
-- 客户的微信号
-- 预览二维码
-
-### 费用说明
-
-- 开发版/体验版预览本身一般 **不额外收费**。
-- 如果要正式发布给所有客户使用，通常需要按微信公众平台当期规则完成小程序主体认证、审核和发布。
-- 如果后端使用对象存储、短信验证码、第三方物流查询、图片/视频上传服务，则这些服务可能产生额外费用，需按实际供应商计费规则评估。
-
-## 提交前检查
-
-- 确认 `utils/request.js` 中的 `baseURL` 指向正确环境。
-- 确认 `api/content.js` 中用到的接口后端已全部提供。
-- 确认微信开发者工具中可以正常编译和预览。
-- 如启用了包裹查询，确认后台已支持快递单号录入与状态维护。
-
-## 相关文档
-
-- [后端对接任务清单.md](./后端对接任务清单.md)
+- `api/content.js`
+- `api/auth.js`
+- `api/repair.js`
+- `pages/login/index.vue`
+- `utils/request.js`
+- `utils/cloud.js`
+- `uniCloud-alipay/database/INDEXES.md`
+- `后端对接任务清单.md`
